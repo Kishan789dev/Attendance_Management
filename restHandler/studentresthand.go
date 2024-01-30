@@ -2,115 +2,160 @@ package restHandler
 
 import (
 	"encoding/json"
+	"strconv"
+
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"gorm.io/gorm"
+	"github.com/kk/attendance_management/bean"
+	"github.com/kk/attendance_management/dataBase"
 )
-
-type Student struct {
-	gorm.Model
-	StudentId      int    `json:"studentid"`
-	StudentName    string `json:"studentname"`
-	StudentAddress string `json:"studentaddress"`
-	StudentClass   int    `json:"studentclass"`
-	StudentEmail   string `json:"studentemail"`
-}
-
-type AttendanceStudent struct {
-	gorm.Model
-	StudentId              int    `json:"studentid"`
-	StudentAttendancedate  string `json:"studentattendancedate"`
-	StudentAttendancemonth string `json:"studentattendancemonth"`
-	StudentAttendanceyear  string `json:"studentattendanceyear"`
-
-	StudentPresentStatus bool `json:"studentpresentstatus"`
-	// StudentPunchIntime     bool `json:"studentintime"`
-	// StudentPunchOuttime   bool `json:"studentouttime"`
-}
 
 // ********************************STUDENT************************************************
 
-func InitialMigration() {
-
-}
-
-func getStudents(w http.ResponseWriter, r *http.Request) {
+func GetStudents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var students []Student
+	db := dataBase.Connect()
+	defer db.Close()
+	var students []bean.Student
+	if err := db.Model(&students).Select(); err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	json.NewEncoder(w).Encode(students)
 
 }
 
-func getStudent(w http.ResponseWriter, r *http.Request) {
+// func connect() {
+// 	panic("unimplemented")
+// }
+
+// func connect() {
+// 	panic("unimplemented")
+// }
+
+func GetStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r)
 
-	var student Student
+	db := dataBase.Connect()
+	defer db.Close()
+
+	// student_id := params["id"]
+	student_id := params["id"]
+	trr, err := strconv.Atoi(student_id)
+	log.Println(err)
+
+	students := &bean.Student{Id: trr}
+
+	if err := db.Model(students).WherePK().Select(); err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	json.NewEncoder(w).Encode(students)
+
+}
+
+func AddStudent(w http.ResponseWriter, r *http.Request) {
+	// fmt.Print("hello2")
+	w.Header().Set("Content-Type", "application/json")
+
+	student := bean.Student{}
+	_ = json.NewDecoder(r.Body).Decode(&student)
+	db := dataBase.Connect()
+	defer db.Close()
+	// student.Id = uuid.New().String()
+	if _, err := db.Model(&student).Insert(); err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	json.NewEncoder(w).Encode(student)
 
 }
 
-func addStudentStudent(w http.ResponseWriter, r *http.Request) {
+func UpdateStudent(w http.ResponseWriter, r *http.Request) {
+
 	w.Header().Set("Content-Type", "application/json")
-	var student Student
-	json.NewDecoder(r.Body).Decode(&student)
-	json.NewEncoder(w).Encode(student)
+
+	db := dataBase.Connect()
+	defer db.Close()
+
+	params := mux.Vars(r)
+
+	student_id := params["id"]
+	trr, err := strconv.Atoi(student_id)
+	log.Println(err)
+	students := &bean.Student{Id: trr}
+
+	_ = json.NewDecoder(r.Body).Decode(&students)
+	yy, err := db.Model(students).WherePK().Set("name= ?,address=?,class=?,email=?", students.Name, students.Address, students.Class, students.Email).Update()
+	log.Println(yy)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	json.NewEncoder(w).Encode(students)
 
 }
 
-func updateStudentStudent(w http.ResponseWriter, r *http.Request) {
-
+func DeleteStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r)
 
-	var student Student
+	db := dataBase.Connect()
+	defer db.Close()
 
-	json.NewDecoder(r.Body).Decode(&student)
-	// save
+	student_id := params["id"]
 
-	json.NewEncoder(w).Encode(student)
+	trr, err := strconv.Atoi(student_id)
+	log.Println(err)
 
-}
+	students := &bean.Student{Id: trr}
+	result, err := db.Model(students).WherePK().Delete()
 
-func deleteStudentStudent(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-	params := mux.Vars(r)
-
-	var student Student
-	// save
-
-	json.NewEncoder(w).Encode("deleted successful")
+	json.NewEncoder(w).Encode(result)
 
 }
 
 // *****************************AttendanceStudent***********************************
 
-func addStudentattendace(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var studentattendace AttendanceStudent
-	json.NewDecoder(r.Body).Decode(&studentattendace)
-	json.NewEncoder(w).Encode(studentattendace)
-}
+// func addStudentattendace(w http.ResponseWriter, r *http.Request) {
+// 	w.Header().Set("Content-Type", "application/json")
+// 	var studentattendace AttendanceStudent
+// 	json.NewDecoder(r.Body).Decode(&studentattendace)
+// 	json.NewEncoder(w).Encode(studentattendace)
+// }
 
-func getStudentattendance(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var studentattendace AttendanceStudent
-	json.NewDecoder(r.Body).Decode(&studentattendace)
-	json.NewEncoder(w).Encode(studentattendace)
+// func getStudentattendance(w http.ResponseWriter, r *http.Request) {
+// 	w.Header().Set("Content-Type", "application/json")
+// 	var studentattendace AttendanceStudent
+// 	json.NewDecoder(r.Body).Decode(&studentattendace)
+// 	json.NewEncoder(w).Encode(studentattendace)
 
-}
+// }
 
-func getClassattendance(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var studentattendace AttendanceStudent
-	json.NewDecoder(r.Body).Decode(&studentattendace)
-	json.NewEncoder(w).Encode(studentattendace)
+// func getClassattendance(w http.ResponseWriter, r *http.Request) {
+// 	w.Header().Set("Content-Type", "application/json")
+// 	var studentattendace AttendanceStudent
+// 	json.NewDecoder(r.Body).Decode(&studentattendace)
+// 	json.NewEncoder(w).Encode(studentattendace)
 
-}
+// }
