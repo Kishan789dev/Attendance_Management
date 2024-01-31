@@ -11,9 +11,17 @@ func InitialiseRouter(r2 *mux.Router) {
 	r2.HandleFunc("/student", rh.AddStudent).Methods("POST")
 	r2.HandleFunc("/student/{id}", rh.UpdateStudent).Methods("PUT")
 	r2.HandleFunc("/student/{id}", rh.DeleteStudent).Methods("DELETE")
-}
 
-// 	// ************Teacher************************************
+	// 	// ************Teacher************************************
+
+	// ********************Student attendance*****************
+
+	r2.HandleFunc("/studentattendance", rh.StudentEntry).Methods("POST")
+	// r.HandleFunc("/studentattendance/{id}/{month}/{year}", getStudentattendance).Methods("GET")
+	// r.HandleFunc("/studentattendance/{class}/{date}/{month}/{year}", getClassattendance).Methods("GET")
+
+	// log.Fatal(http.ListenAndServe(":5678", r2))
+}
 
 // 	r.HandleFunc("/techer/{id}", getTeacher).Methods("GET")
 // 	r.HandleFunc("/teacher", getTeachers).Methods("GET")
@@ -27,15 +35,6 @@ func InitialiseRouter(r2 *mux.Router) {
 // 	r.HandleFunc("/teacherattendace/{id}/{month}/{year}", getTeacherattendace).Methods("GET")
 // 	// principle
 // 	// r.HandleFunc("/teacherattendace/{id}/{month}/{year}").Methods("GET")
-
-// 	// ********************Student attendance*****************
-
-// 	r.HandleFunc("/studentattendance", addStudentattendance).Methods("PUT")
-// 	r.HandleFunc("/studentattendance/{id}/{month}/{year}", getStudentattendance).Methods("GET")
-// 	r.HandleFunc("/studentattendance/{class}/{date}/{month}/{year}", getClassattendance).Methods("GET")
-
-// 	log.Fatal(http.ListenAndServe(":9000", r))
-// }
 
 // func createProducts(w http.ResponseWriter, r *http.Request) {
 // 	w.Header().Set("content-type", "application/json")

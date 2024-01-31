@@ -3,12 +3,14 @@ package restHandler
 import (
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"log"
 	"net/http"
 
+	"github.com/go-pg/pg"
 	"github.com/gorilla/mux"
-	"github.com/kk/attendance_management/bean"
+	bean "github.com/kk/attendance_management/bean"
 	"github.com/kk/attendance_management/dataBase"
 )
 
@@ -51,7 +53,7 @@ func GetStudent(w http.ResponseWriter, r *http.Request) {
 	trr, err := strconv.Atoi(student_id)
 	log.Println(err)
 
-	students := &bean.Student{Id: trr}
+	students := &bean.Student{Sid: trr}
 
 	if err := db.Model(students).WherePK().Select(); err != nil {
 		log.Println(err)
@@ -69,11 +71,14 @@ func AddStudent(w http.ResponseWriter, r *http.Request) {
 
 	student := bean.Student{}
 	_ = json.NewDecoder(r.Body).Decode(&student)
+
 	db := dataBase.Connect()
 	defer db.Close()
 	// student.Id = uuid.New().String()
 	if _, err := db.Model(&student).Insert(); err != nil {
 		log.Println(err)
+		// json.NewEncoder(w).Encode("error is line no 77")
+
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -94,7 +99,7 @@ func UpdateStudent(w http.ResponseWriter, r *http.Request) {
 	student_id := params["id"]
 	trr, err := strconv.Atoi(student_id)
 	log.Println(err)
-	students := &bean.Student{Id: trr}
+	students := &bean.Student{Sid: trr}
 
 	_ = json.NewDecoder(r.Body).Decode(&students)
 	yy, err := db.Model(students).WherePK().Set("name= ?,address=?,class=?,email=?", students.Name, students.Address, students.Class, students.Email).Update()
@@ -122,7 +127,7 @@ func DeleteStudent(w http.ResponseWriter, r *http.Request) {
 	trr, err := strconv.Atoi(student_id)
 	log.Println(err)
 
-	students := &bean.Student{Id: trr}
+	students := &bean.Student{Sid: trr}
 	result, err := db.Model(students).WherePK().Delete()
 
 	if err != nil {
@@ -137,12 +142,161 @@ func DeleteStudent(w http.ResponseWriter, r *http.Request) {
 
 // *****************************AttendanceStudent***********************************
 
-// func addStudentattendace(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	var studentattendace AttendanceStudent
-// 	json.NewDecoder(r.Body).Decode(&studentattendace)
-// 	json.NewEncoder(w).Encode(studentattendace)
-// }
+func StudentEntryPunchin(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	studentattendance := bean.StudentAttendance{}
+
+	_ = json.NewDecoder(r.Body).Decode(&studentattendance)
+
+	db := dataBase.Connect()
+
+	defer db.Close()
+
+	err := db.Model(&studentattendance).Where("id=?", studentattendance.Sid).Select()
+	if err == pg.ErrNoRows {
+		//  studentattendace.PunchIntime=time.Now()
+		studentattendance.Date = time.Now().Day()
+		studentattendance.Month = int(time.Now().Month())
+		studentattendance.Date = time.Now().Year()
+
+		_, err := db.Model(&studentattendance).Insert()
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		// log punch in
+
+		punchin := &bean.StudentLogPunchs{
+			Aid:  studentattendance.Aid,
+			Time: time.Now(),
+			Type: 1,
+		}
+		_, err = db.Model(punchin).Insert()
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+	} else if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+
+	} else {
+
+		aid := studentattendance.Aid
+
+		punchtable := bean.StudentLogPunchs{Aid: aid}
+
+		pi_count, err := db.Model(&punchtable).Where("aid=? and type=?", aid, 1).Count()
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		po_count, err := db.Model(&punchtable).Where("aid=? and type=?", aid, 2).Count()
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if pi_count < po_count {
+
+			punchtable.Time = time.Now()
+			punchtable.Type = 1
+			_, err := db.Model(&punchtable).Insert()
+
+			if err != nil {
+				log.Println(err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+		} else {
+
+			json.NewEncoder(w).Encode("You have already punch in")
+			return
+
+		}
+
+	}
+
+	json.NewEncoder(w).Encode("punch in successful")
+}
+
+func StudentEntryPunchOut(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	studentattendance := bean.StudentAttendance{}
+
+	_ = json.NewDecoder(r.Body).Decode(&studentattendance)
+
+	db := dataBase.Connect()
+
+	defer db.Close()
+
+	err := db.Model(&studentattendance).Where("id=?", studentattendance.Sid).Select()
+	if err == pg.ErrNoRows {
+		json.NewEncoder(w).Encode(" no data found  so go for punch in first")
+
+	} else if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+
+	} else {
+
+		aid := studentattendance.Aid
+
+		punchtable := bean.StudentLogPunchs{Aid: aid}
+
+		pi_count, err := db.Model(&punchtable).Where("aid=? and type=?", aid, 1).Count()
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		po_count, err := db.Model(&punchtable).Where("aid=? and type=?", aid, 2).Count()
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if pi_count > po_count {
+
+			punchtable.Time = time.Now()
+			punchtable.Type = 2
+			_, err := db.Model(&punchtable).Insert()
+
+			if err != nil {
+				log.Println(err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+		} else {
+
+			json.NewEncoder(w).Encode("You have already punch out")
+			return
+
+		}
+
+	}
+
+	json.NewEncoder(w).Encode("punch out successful")
+}
 
 // func getStudentattendance(w http.ResponseWriter, r *http.Request) {
 // 	w.Header().Set("Content-Type", "application/json")

@@ -1,22 +1,34 @@
 package bean
 
+import "time"
+
 type Student struct {
-	Id      int    `json:"id"`
+	Sid     int    `json:"sid"`
 	Name    string `json:"name"`
 	Address string `json:"address"`
 	Class   int    `json:"class"`
 	Email   string `json:"email"`
 }
 
-type AttendanceStudent struct {
-	StudentId              string `json:"studentid"`
-	StudentAttendancedate  string `json:"studentattendancedate"`
-	StudentAttendancemonth string `json:"studentattendancemonth"`
-	StudentAttendanceyear  string `json:"studentattendanceyear"`
+type StudentAttendance struct {
+	Aid   int `json:"aid"`
+	Sid   int `json:"sid"`
+	Date  int `json:"date"`
+	Month int `json:"month"`
+	Year  int `json:"year"`
+	// Presentstatus bool      `json:"presentstatus"`
+	// PunchIntime   time.Time `json:"punchintime"`
+	// Puncouttime   time.Time `json:"punchouttime"`
 
-	StudentPresentStatus bool `json:"studentpresentstatus"`
 	// StudentPunchIntime     bool `json:"studentintime"`
 	// StudentPunchOuttime   bool `json:"studentouttime"`
+}
+
+type StudentLogPunchs struct {
+	Lid  int       `json:"lid"`
+	Aid  int       `json:"aid"`
+	Time time.Time `json:"time"`
+	Type int       `json:"type"`
 }
 
 // type Teacher struct {
