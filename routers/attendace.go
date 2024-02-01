@@ -6,33 +6,36 @@ import (
 )
 
 func InitialiseRouter(r2 *mux.Router) {
-	r2.HandleFunc("/student/{id}", rh.GetStudent).Methods("GET")
-	r2.HandleFunc("/student", rh.GetStudents).Methods("GET")
-	r2.HandleFunc("/student", rh.AddStudent).Methods("POST")
-	r2.HandleFunc("/student/{id}", rh.UpdateStudent).Methods("PUT")
-	r2.HandleFunc("/student/{id}", rh.DeleteStudent).Methods("DELETE")
+	// r2.HandleFunc("/student/{id}", rh.GetStudent).Methods("GET")
+	// r2.HandleFunc("/student", rh.GetStudents).Methods("GET")
+	// r2.HandleFunc("/student", rh.AddStudent).Methods("POST")
+	// r2.HandleFunc("/student/{id}", rh.UpdateStudent).Methods("PUT")
+	// r2.HandleFunc("/student/{id}", rh.DeleteStudent).Methods("DELETE")
 
 	// 	// ************Teacher************************************
 
 	// ********************Student attendance*****************
 
-	r2.HandleFunc("/studentattendance", rh.StudentEntry).Methods("POST")
-	// r.HandleFunc("/studentattendance/{id}/{month}/{year}", getStudentattendance).Methods("GET")
-	// r.HandleFunc("/studentattendance/{class}/{date}/{month}/{year}", getClassattendance).Methods("GET")
+	r2.HandleFunc("/studentattendance/punchin", rh.StudentEntryPunchin).Methods("POST")
+	r2.HandleFunc("/studentattendance/punchout", rh.StudentEntryPunchOut).Methods("POST")
+
+	// r.HandleFunc("/studentattendance/{id}/{month}/{year}", rh.GetStudentattendance).Methods("GET")
+	r2.HandleFunc("/studentattendance", rh.GetClassattendance).Methods("GET")
+	// r2.HandleFunc("/studentattendance/{class}/{date}/{month}/{year}", rh.GetClassattendance).Methods("GET")
 
 	// log.Fatal(http.ListenAndServe(":5678", r2))
 }
 
-// 	r.HandleFunc("/techer/{id}", getTeacher).Methods("GET")
-// 	r.HandleFunc("/teacher", getTeachers).Methods("GET")
-// 	r.HandleFunc("/teacher", addTeacher).Methods("POST")
-// 	r.HandleFunc("/teacher{id}", updateTeacher).Methods("PUT")
-// 	r.HandleFunc("/teacher{id}", deleteTeacher).Methods("DELETE")
+// 	r.HandleFunc("/techer/{id}", GetTeacher).Methods("GET")
+// 	r.HandleFunc("/teacher", GetTeachers).Methods("GET")
+// 	r.HandleFunc("/teacher", AddTeacher).Methods("POST")
+// 	r.HandleFunc("/teacher{id}", UpdateTeacher).Methods("PUT")
+// 	r.HandleFunc("/teacher{id}", DeleteTeacher).Methods("DELETE")
 
 // 	// ********************Teacher attendance*****************
 
-// 	r.HandleFunc("/teacherattendance", addTeacherattendace).Methods("PUT")
-// 	r.HandleFunc("/teacherattendace/{id}/{month}/{year}", getTeacherattendace).Methods("GET")
+// 	r.HandleFunc("/teacherattendance", AddTeacherattendace).Methods("PUT")
+// 	r.HandleFunc("/teacherattendace/{id}/{month}/{year}", GetTeacherattendace).Methods("GET")
 // 	// principle
 // 	// r.HandleFunc("/teacherattendace/{id}/{month}/{year}").Methods("GET")
 
