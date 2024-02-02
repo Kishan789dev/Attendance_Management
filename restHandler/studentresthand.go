@@ -2,145 +2,142 @@ package restHandler
 
 import (
 	"encoding/json"
-	"fmt"
+	"strconv"
 	"time"
 
 	"log"
 	"net/http"
 
 	"github.com/go-pg/pg"
+	"github.com/gorilla/mux"
 	bean "github.com/kk/attendance_management/bean"
 	"github.com/kk/attendance_management/dataBase"
 )
 
-// ********************************STUDENT************************************************
+// // ********************************STUDENT************************************************
 
-// func GetStudents(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
+func GetStudents(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-// 	db := dataBase.Connect()
-// 	defer db.Close()
-// 	var students []bean.Student
-// 	if err := db.Model(&students).Select(); err != nil {
-// 		log.Println(err)
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		return
-// 	}
+	db := dataBase.Connect()
+	defer db.Close()
+	var students []bean.Student
+	if err := db.Model(&students).Select(); err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-// 	json.NewEncoder(w).Encode(students)
+	json.NewEncoder(w).Encode(students)
 
-// }
+}
 
-// // func connect() {
-// // 	panic("unimplemented")
-// // }
+func GetStudent(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-// // func connect() {
-// // 	panic("unimplemented")
-// // }
+	params := mux.Vars(r)
 
-// func GetStudent(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
+	db := dataBase.Connect()
+	defer db.Close()
 
-// 	params := mux.Vars(r)
+	// student_id := params["id"]
+	student_id := params["id"]
+	trr, err := strconv.Atoi(student_id)
+	log.Println(err)
 
-// 	db := dataBase.Connect()
-// 	defer db.Close()
+	students := &bean.Student{Sid: trr}
 
-// 	// student_id := params["id"]
-// 	student_id := params["id"]
-// 	trr, err := strconv.Atoi(student_id)
-// 	log.Println(err)
+	if err := db.Model(students).Where("sid=?", trr).Select(); err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-// 	students := &bean.Student{Sid: trr}
+	json.NewEncoder(w).Encode(students)
 
-// 	if err := db.Model(students).WherePK().Select(); err != nil {
-// 		log.Println(err)
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		return
-// 	}
+}
 
-// 	json.NewEncoder(w).Encode(students)
+func AddStudent(w http.ResponseWriter, r *http.Request) {
+	// fmt.Print("hello2")
+	w.Header().Set("Content-Type", "application/json")
 
-// }
+	student := bean.Student{}
+	_ = json.NewDecoder(r.Body).Decode(&student)
 
-// func AddStudent(w http.ResponseWriter, r *http.Request) {
-// 	// fmt.Print("hello2")
-// 	w.Header().Set("Content-Type", "application/json")
+	db := dataBase.Connect()
+	defer db.Close()
+	// student.Id = uuid.New().String()
+	if _, err := db.Model(&student).Insert(); err != nil {
+		log.Println(err)
+		// json.NewEncoder(w).Encode("error is line no 77")
 
-// 	student := bean.Student{}
-// 	_ = json.NewDecoder(r.Body).Decode(&student)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-// 	db := dataBase.Connect()
-// 	defer db.Close()
-// 	// student.Id = uuid.New().String()
-// 	if _, err := db.Model(&student).Insert(); err != nil {
-// 		log.Println(err)
-// 		// json.NewEncoder(w).Encode("error is line no 77")
+	json.NewEncoder(w).Encode(student)
 
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		return
-// 	}
+}
 
-// 	json.NewEncoder(w).Encode(student)
+func UpdateStudent(w http.ResponseWriter, r *http.Request) {
 
-// }
+	w.Header().Set("Content-Type", "application/json")
 
-// func UpdateStudent(w http.ResponseWriter, r *http.Request) {
+	db := dataBase.Connect()
+	defer db.Close()
 
-// 	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
 
-// 	db := dataBase.Connect()
-// 	defer db.Close()
+	student_id := params["id"]
+	trr, err := strconv.Atoi(student_id)
+	log.Println(err)
+	students := &bean.Student{Sid: trr}
 
-// 	params := mux.Vars(r)
+	_ = json.NewDecoder(r.Body).Decode(&students)
+	yy, err := db.Model(students).Where("sid=?", trr).Set("name= ?,address=?,class=?,email=?", students.Name, students.Address, students.Class, students.Email).Update()
+	log.Println(yy)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-// 	student_id := params["id"]
-// 	trr, err := strconv.Atoi(student_id)
-// 	log.Println(err)
-// 	students := &bean.Student{Sid: trr}
+	json.NewEncoder(w).Encode(students)
 
-// 	_ = json.NewDecoder(r.Body).Decode(&students)
-// 	yy, err := db.Model(students).WherePK().Set("name= ?,address=?,class=?,email=?", students.Name, students.Address, students.Class, students.Email).Update()
-// 	log.Println(yy)
-// 	if err != nil {
-// 		log.Println(err)
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		return
-// 	}
+}
 
-// 	json.NewEncoder(w).Encode(students)
+func DeleteStudent(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-// }
+	params := mux.Vars(r)
 
-// func DeleteStudent(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
+	db := dataBase.Connect()
+	defer db.Close()
 
-// 	params := mux.Vars(r)
+	student_id := params["id"]
 
-// 	db := dataBase.Connect()
-// 	defer db.Close()
+	trr, err := strconv.Atoi(student_id)
+	log.Println(err)
 
-// 	student_id := params["id"]
+	students := &bean.Student{Sid: trr}
+	result, err := db.Model(students).Where("sid=?", trr).Delete()
 
-// 	trr, err := strconv.Atoi(student_id)
-// 	log.Println(err)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if result != nil {
+		json.NewEncoder(w).Encode("data deleted successfully")
+		return
+	}
 
-// 	students := &bean.Student{Sid: trr}
-// 	result, err := db.Model(students).WherePK().Delete()
+	json.NewEncoder(w).Encode(result)
 
-// 	if err != nil {
-// 		log.Println(err)
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		return
-// 	}
+}
 
-// 	json.NewEncoder(w).Encode(result)
-
-// }
-
-// *****************************AttendanceStudent***********************************
-// perform the first punchin in transaction
+// // *****************************AttendanceStudent***********************************
+// // perform the first punchin in transaction
 
 func StudentEntryPunchin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -321,33 +318,26 @@ func StudentEntryPunchOut(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode("punch out successful")
 }
 
-func GetClassattendance(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("get attendance request received")
+func GetStudentattendance(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	db := dataBase.Connect()
 	defer db.Close()
-	// var student bean.Student
+	var studentattendance bean.StudentAttendance
+	json.NewDecoder(r.Body).Decode(&studentattendance)
+	var studentattendancedetail []bean.StudentAttendancetemp
+	err := db.Model(&studentattendancedetail).
+		ColumnExpr(" DISTINCT student_attendances.date").
+		Column("student_attendances.month").
+		Column("student_attendances.year").
+		Column("student_log_punchs.time").
+		Column("student_log_punchs.type").
+		Join("inner join student_attendances on student_attendances.aid=student_log_punchs.aid").
+		Table("student_log_punchs").
+		Where("student_attendances.sid=? AND student_attendances.month=? AND student_attendances.year=?", studentattendance.Sid, studentattendance.Month, studentattendance.Year).
+		Select()
 
-	var classtemp = &bean.Classtemp{}
-
-	var classdata []bean.ClasstempRes
-	json.NewDecoder(r.Body).Decode(&classtemp)
-
-	// err := db.Model(&student).Where("class =?", classtemp.Class).Select()
-	// err := db.Model(&classdata).
-	// 	Column("students.class").
-	// 	Column("student_attendances.date").Column("student_attendances.month").Column("student_attendances.year").
-	// 	Join("INNER JOIN student_attendances on student_attendances.sid=students.sid").
-	// 	Table("students").
-	// 	Where("student_attendances.date=? AND student_attendances.month=? AND student_attendances.year=?", classtemp.Date, classtemp.Month, classtemp.Year).
-	// 	Where("students.class =?", classtemp.Class).
-	// 	Select()
-	query := `select students.sid,students.name,students.class,student_attendances.date,student_attendances.month,student_attendances.year
-			from students inner join student_attendances on students.sid=student_attendances.sid where student_attendances.date=? and
-			student_attendances.month=? and student_attendances.year=? and students.class =?;`
-	_, err := db.Query(&classdata, query, classtemp.Date, classtemp.Month, classtemp.Year, classtemp.Class)
 	if err == pg.ErrNoRows {
-		json.NewEncoder(w).Encode("no students are in this class ")
+		json.NewEncoder(w).Encode("no data found with this details ")
 		return
 
 	} else if err != nil {
@@ -356,17 +346,18 @@ func GetClassattendance(w http.ResponseWriter, r *http.Request) {
 		return
 
 	} else {
+		// fmt.Println("Third case")
+		if studentattendancedetail == nil {
+			json.NewEncoder(w).Encode("student with this details doesn't exist")
 
-		json.NewEncoder(w).Encode(classdata)
+		}
+		json.NewEncoder(w).Encode(studentattendancedetail)
 		return
 	}
 
 }
 
-// func getClassattendance(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	var studentattendace AttendanceStudent
-// 	json.NewDecoder(r.Body).Decode(&studentattendace)
-// 	json.NewEncoder(w).Encode(studentattendace)
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// *************************************************************************************************************************************
 
-// }
+// ****************TEACHER*********************
