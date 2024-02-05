@@ -117,12 +117,12 @@ func GetTeacher(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func AddTeacher(w http.ResponseWriter, r *http.Request) {
-	fmt.Print("hello2")
+func AddTeacher(w http.ResponseWriter, name string, address string, email string) {
+	// fmt.Print("hello2")
 	w.Header().Set("Content-Type", "application/json")
 
-	teacher := bean.Teacher{}
-	_ = json.NewDecoder(r.Body).Decode(&teacher)
+	teacher := bean.Teacher{Name: name, Address: address, Email: email}
+	// _ = json.NewDecoder(r.Body).Decode(&teacher)
 
 	db := dataBase.Connect()
 	defer db.Close()

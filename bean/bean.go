@@ -93,3 +93,20 @@ type ClasstempRes struct {
 	Month int    `json:"month" sql:"month"`
 	Year  int    `json:"year" sql:"year"`
 }
+
+type User struct {
+	Uid      int    `json:"uid" sql:"uid"`
+	Email    string `json:"email" sql:"email"`
+	Role     int    `json:"role" sql:"role"`
+	Password string `jso:"password" sql:"password"`
+}
+
+type Userdetails struct {
+	TableName struct{} `sql:"users" json:"-"`
+	Name      string   `json:"name" sql:"name"`
+	Address   string   `json:"address" sql:"address"`
+	Class     int      `json:"class" sql:"class"`
+	Email     string   `json:"email" sql:"email"`
+	Role      int      `json:"role" sql:"role"`
+	Password  string   `jso:"password" sql:"password"`
+}

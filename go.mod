@@ -2,7 +2,10 @@ module github.com/kk/attendance_management
 
 go 1.18
 
-require github.com/go-pg/pg v8.0.7+incompatible
+require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/go-pg/pg v8.0.7+incompatible
+)
 
 require (
 	github.com/onsi/ginkgo v1.16.5 // indirect

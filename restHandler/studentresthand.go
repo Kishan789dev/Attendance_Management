@@ -8,28 +8,227 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/go-pg/pg"
 	"github.com/gorilla/mux"
 	bean "github.com/kk/attendance_management/bean"
 	"github.com/kk/attendance_management/dataBase"
 )
 
-// // ********************************STUDENT************************************************
+// authorization
 
-func GetStudents(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+var jwtKey = []byte("secret_key")
 
-	db := dataBase.Connect()
-	defer db.Close()
-	var students []bean.Student
-	if err := db.Model(&students).Select(); err != nil {
-		log.Println(err)
+// var users = map[string]string{
+// 	"user1": "password1",
+// 	"user2": "password2",
+// }
+
+type Credentials struct {
+	Useremail string `json:"useremail"`
+	Password  string `json:"password"`
+}
+
+type Claims struct {
+	Useremail string `json:"useremail"`
+	jwt.StandardClaims
+}
+
+func Login(w http.ResponseWriter, r *http.Request) {
+	var credentialStudent Credentials
+	// var credentialTeacher bean.Teacher
+	err := json.NewDecoder(r.Body).Decode(&credentialStudent)
+	// fmt.Println(credentialStudent)
+	// err = json.NewDecoder(r.Body).Decode(&credentialTeacher)
+	var getpassword bean.User
+
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	db := dataBase.Connect()
 
-	json.NewEncoder(w).Encode(students)
+	defer db.Close()
+	var mypass string
 
+	err = db.Model(&getpassword).Column("password").Where("email=?", credentialStudent.Useremail).Select(&mypass)
+	if err != nil {
+		if err == pg.ErrNoRows {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	expectedPassword := credentialStudent.Password
+	actualPassword := mypass
+
+	if expectedPassword != actualPassword {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// expectedPassword, ok := users[credentials.Username]
+
+	expirationTime := time.Now().Add(time.Minute * 5)
+
+	claims := &Claims{
+		Useremail: credentialStudent.Useremail,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtKey)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w,
+		&http.Cookie{
+			Name:    "token",
+			Value:   tokenString,
+			Expires: expirationTime,
+		})
+
+}
+
+func getValidatedemail(w http.ResponseWriter, r *http.Request) (string, error) {
+	cookie, err := r.Cookie("token")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			w.WriteHeader(http.StatusUnauthorized)
+			return "", err
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		return "", err
+	}
+
+	tokenStr := cookie.Value
+
+	claims := &Claims{}
+
+	tkn, err := jwt.ParseWithClaims(tokenStr, claims,
+		func(t *jwt.Token) (interface{}, error) {
+			return jwtKey, nil
+		})
+
+	if err != nil {
+		if err == jwt.ErrSignatureInvalid {
+			w.WriteHeader(http.StatusUnauthorized)
+			return "", err
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		return "", err
+	}
+
+	if !tkn.Valid {
+		w.WriteHeader(http.StatusUnauthorized)
+		return "", err
+	}
+	// check email expiration
+
+	var newuser bean.User
+	db := dataBase.Connect()
+	defer db.Close()
+	err = db.Model(&newuser).Where("email=?", claims.Useremail).Select()
+	if err == pg.ErrNoRows {
+		w.WriteHeader(http.StatusUnauthorized)
+		return "", err
+	}
+
+	return claims.Useremail, err
+
+}
+
+// func Refresh(w http.ResponseWriter, r *http.Request) {
+// 	cookie, err := r.Cookie("token")
+// 	if err != nil {
+// 		if err == http.ErrNoCookie {
+// 			w.WriteHeader(http.StatusUnauthorized)
+// 			return
+// 		}
+// 		w.WriteHeader(http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	tokenStr := cookie.Value
+
+// 	claims := &Claims{}
+
+// 	tkn, err := jwt.ParseWithClaims(tokenStr, claims,
+// 		func(t *jwt.Token) (interface{}, error) {
+// 			return jwtKey, nil
+// 		})
+
+// 	if err != nil {
+// 		if err == jwt.ErrSignatureInvalid {
+// 			w.WriteHeader(http.StatusUnauthorized)
+// 			return
+// 		}
+// 		w.WriteHeader(http.StatusBadRequest)
+// 		return
+// 	}
+// 	if !tkn.Valid {
+// 		w.WriteHeader(http.StatusUnauthorized)
+// 		return
+// 	}
+
+// 	// if time.Unix(claims.ExpiresAt, 0).Sub(time.Now()) > 30*time.Second {
+// 	// 	w.WriteHeader(http.StatusBadRequest)
+// 	// 	return
+// 	// }
+
+// 	expirationTime := time.Now().Add(time.Minute * 5)
+
+// 	claims.ExpiresAt = expirationTime.Unix()
+
+// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+// 	tokenString, err := token.SignedString(jwtKey)
+
+// 	if err != nil {
+// 		w.WriteHeader(http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	http.SetCookie(w,
+// 		&http.Cookie{
+// 			Name:    "refresh_token",
+// 			Value:   tokenString,
+// 			Expires: expirationTime,
+// 		})
+
+// }
+
+// // ********************************STUDENT************************************************
+
+func GetStudents(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
+
+	_, err := getValidatedemail(w, r)
+	if err != nil {
+		json.NewEncoder(w).Encode("user is unauthorised")
+		return
+
+	} else {
+
+		db := dataBase.Connect()
+		defer db.Close()
+
+		var students []bean.Student
+		if err := db.Model(&students).Select(); err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		json.NewEncoder(w).Encode(students)
+	}
 }
 
 func GetStudent(w http.ResponseWriter, r *http.Request) {
@@ -57,12 +256,12 @@ func GetStudent(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func AddStudent(w http.ResponseWriter, r *http.Request) {
+func AddStudent(w http.ResponseWriter, name string, address string, class int, email string) {
 	// fmt.Print("hello2")
 	w.Header().Set("Content-Type", "application/json")
 
-	student := bean.Student{}
-	_ = json.NewDecoder(r.Body).Decode(&student)
+	student := bean.Student{Name: name, Address: address, Class: class, Email: email}
+	// _ = json.NewDecoder(r.Body).Decode(&student)
 
 	db := dataBase.Connect()
 	defer db.Close()
