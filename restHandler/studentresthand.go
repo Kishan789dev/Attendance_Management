@@ -35,6 +35,7 @@ type Claims struct {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
+
 	var credentialStudent Credentials
 	// var credentialTeacher bean.Teacher
 	err := json.NewDecoder(r.Body).Decode(&credentialStudent)
@@ -53,7 +54,9 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	err = db.Model(&getpassword).Column("password").Where("email=?", credentialStudent.Useremail).Select(&mypass)
 	if err != nil {
+		// log.Println("k0")
 		if err == pg.ErrNoRows {
+
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -63,11 +66,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	expectedPassword := credentialStudent.Password
 	actualPassword := mypass
+	log.Println("k1")
 
 	if expectedPassword != actualPassword {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+	log.Println("k2")
 
 	// expectedPassword, ok := users[credentials.Username]
 
@@ -94,11 +99,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			Value:   tokenString,
 			Expires: expirationTime,
 		})
+	log.Println("kisahn")
 
 }
 
 func getValidatedemail(w http.ResponseWriter, r *http.Request) (string, error) {
 	cookie, err := r.Cookie("token")
+
 	if err != nil {
 		if err == http.ErrNoCookie {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -215,24 +222,45 @@ func GetStudents(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode("user is unauthorised")
 		return
 
-	} else {
-
-		db := dataBase.Connect()
-		defer db.Close()
-
-		var students []bean.Student
-		if err := db.Model(&students).Select(); err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		json.NewEncoder(w).Encode(students)
 	}
+	// var usr bean.User
+	db := dataBase.Connect()
+	defer db.Close()
+	var students []bean.Student
+	// var role int
+
+	// err = db.Model(&usr).Column("role").Where("email=?", email).Select(&role)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	return
+	// }
+
+	// if role == 2 || role == 3  || role{
+	if err := db.Model(&students).Select(); err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	json.NewEncoder(w).Encode(students)
+
+	// } else {
+	// 	json.NewEncoder(w).Encode("you are student you are not allowed to see the details of other students")
+	// 	return
+
+	// }
 }
 
 func GetStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
+	email, err := getValidatedemail(w, r)
+
+	if err != nil {
+		json.NewEncoder(w).Encode("user is unauthorised")
+		return
+	}
 
 	params := mux.Vars(r)
 
@@ -246,7 +274,7 @@ func GetStudent(w http.ResponseWriter, r *http.Request) {
 
 	students := &bean.Student{Sid: trr}
 
-	if err := db.Model(students).Where("sid=?", trr).Select(); err != nil {
+	if err := db.Model(students).Where("sid=? AND email=?", trr, email).Select(); err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -256,248 +284,350 @@ func GetStudent(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func AddStudent(w http.ResponseWriter, name string, address string, class int, email string) {
+func AddStudent(w http.ResponseWriter, r *http.Request) {
 	// fmt.Print("hello2")
+	// w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Type", "application/json")
 
-	student := bean.Student{Name: name, Address: address, Class: class, Email: email}
-	// _ = json.NewDecoder(r.Body).Decode(&student)
+	email, err := getValidatedemail(w, r)
+	if err != nil {
+		json.NewEncoder(w).Encode("user is unauthorised")
+		return
 
+	}
+	var usr bean.User
 	db := dataBase.Connect()
 	defer db.Close()
-	// student.Id = uuid.New().String()
-	if _, err := db.Model(&student).Insert(); err != nil {
-		log.Println(err)
-		// json.NewEncoder(w).Encode("error is line no 77")
+	var role int
 
+	err = db.Model(&usr).Column("role").Where("email=?", email).Select(&role)
+	if err != nil {
+		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	json.NewEncoder(w).Encode(student)
+	if role == 3 {
+		var userdetails bean.Userdetails
 
+		_ = json.NewDecoder(r.Body).Decode(&userdetails)
+
+		student := bean.Student{Name: userdetails.Name, Address: userdetails.Address, Class: userdetails.Class, Email: userdetails.Email}
+		// _ = json.NewDecoder(r.Body).Decode(&student)
+
+		// student.Id = uuid.New().String()
+		if _, err := db.Model(&student).Insert(); err != nil {
+			log.Println(err)
+			// json.NewEncoder(w).Encode("error is line no 77")
+
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		json.NewEncoder(w).Encode(student)
+		// making an entry in user table
+
+		AddUser(w, userdetails.Email, userdetails.Role, userdetails.Password)
+
+	} else {
+		json.NewEncoder(w).Encode("only principle can add student")
+		return
+
+	}
 }
 
 func UpdateStudent(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
+	email, err := getValidatedemail(w, r)
+	if err != nil {
+		json.NewEncoder(w).Encode("user is unauthorised")
+		return
+
+	}
+	var usr bean.User
 	db := dataBase.Connect()
 	defer db.Close()
+	var role int
 
-	params := mux.Vars(r)
-
-	student_id := params["id"]
-	trr, err := strconv.Atoi(student_id)
-	log.Println(err)
-	students := &bean.Student{Sid: trr}
-
-	_ = json.NewDecoder(r.Body).Decode(&students)
-	yy, err := db.Model(students).Where("sid=?", trr).Set("name= ?,address=?,class=?,email=?", students.Name, students.Address, students.Class, students.Email).Update()
-	log.Println(yy)
+	err = db.Model(&usr).Column("role").Where("email=?", email).Select(&role)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	json.NewEncoder(w).Encode(students)
+	if role == 1 || role == 3 {
 
+		// db := dataBase.Connect()
+		// defer db.Close()
+
+		params := mux.Vars(r)
+
+		student_id := params["id"]
+		trr, err := strconv.Atoi(student_id)
+		log.Println(err)
+		students := &bean.Student{Sid: trr}
+
+		_ = json.NewDecoder(r.Body).Decode(&students)
+		yy, err := db.Model(students).Where("sid=?", trr).Set("name= ?,address=?,class=?,email=?", students.Name, students.Address, students.Class, students.Email).Update()
+		log.Println(yy)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		json.NewEncoder(w).Encode(students)
+
+	} else {
+		json.NewEncoder(w).Encode("only student and principle  can update student")
+		return
+
+	}
 }
 
 func DeleteStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	params := mux.Vars(r)
+	email, err := getValidatedemail(w, r)
+	if err != nil {
+		json.NewEncoder(w).Encode("user is unauthorised")
+		return
 
+	}
+	var usr bean.User
 	db := dataBase.Connect()
 	defer db.Close()
+	var role int
 
-	student_id := params["id"]
-
-	trr, err := strconv.Atoi(student_id)
-	log.Println(err)
-
-	students := &bean.Student{Sid: trr}
-	result, err := db.Model(students).Where("sid=?", trr).Delete()
-
+	err = db.Model(&usr).Column("role").Where("email=?", email).Select(&role)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if result != nil {
-		json.NewEncoder(w).Encode("data deleted successfully")
+
+	if role == 3 {
+
+		params := mux.Vars(r)
+
+		db := dataBase.Connect()
+		defer db.Close()
+
+		student_id := params["id"]
+
+		trr, err := strconv.Atoi(student_id)
+		log.Println(err)
+
+		students := &bean.Student{Sid: trr}
+		result, err := db.Model(students).Where("sid=?", trr).Delete()
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if result != nil {
+			json.NewEncoder(w).Encode("data deleted successfully")
+			return
+		}
+
+		json.NewEncoder(w).Encode(result)
+	} else {
+		json.NewEncoder(w).Encode("only principle  can delete student")
 		return
 	}
-
-	json.NewEncoder(w).Encode(result)
-
 }
 
 // // *****************************AttendanceStudent***********************************
 // // perform the first punchin in transaction
 
 func StudentEntryPunchin(w http.ResponseWriter, r *http.Request) {
+
 	w.Header().Set("Content-Type", "application/json")
 
-	studentattendance := bean.StudentAttendance{}
+	email, err := getValidatedemail(w, r)
+	if err != nil {
+		json.NewEncoder(w).Encode("user is unauthorised")
+		return
 
-	_ = json.NewDecoder(r.Body).Decode(&studentattendance)
-
+	}
+	var usr bean.User
 	db := dataBase.Connect()
-
 	defer db.Close()
+	var role int
 
-	// err := db.Model(&studentattendance).Where("id=? and date=?", studentattendance.Sid, studentattendance.Date).Select() // add date in where clause
-	err := db.Model(&studentattendance).Where("sid=? and date=? and month=? and year=? ", studentattendance.Sid, time.Now().Day(), int(time.Now().Month()), time.Now().Year()).Select() // add date in where claise
-
-	if err == pg.ErrNoRows {
-		//  studentattendace.PunchIntime=time.Now()
-		log.Println(studentattendance.Sid)
-
-		studentattendance.Date = time.Now().Day()
-		studentattendance.Month = int(time.Now().Month())
-		studentattendance.Year = time.Now().Year()
-
-		_, err := db.Model(&studentattendance).Insert()
-		if err != nil {
-			log.Println("166")
-			log.Println(err)
-
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		// log punch in
-
-		punchin := &bean.StudentLogPunchs{
-			Aid:  studentattendance.Aid,
-			Time: time.Now().Add(time.Hour*5 + time.Minute*30),
-			Type: 1,
-		}
-		_, err = db.Model(punchin).Insert()
-
-		if err != nil {
-			log.Println("182")
-
-			log.Println(err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-	} else if err != nil {
-		log.Println("190")
-
+	err = db.Model(&usr).Column("role").Where("email=?", email).Select(&role)
+	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
+	}
 
-	} else {
+	if role == 1 {
 
-		aid := studentattendance.Aid
+		studentattendance := bean.StudentAttendance{}
 
-		punchtable := bean.StudentLogPunchs{Aid: aid}
+		_ = json.NewDecoder(r.Body).Decode(&studentattendance)
 
-		pi_count, err := db.Model(&punchtable).Where("aid=? and type=?", aid, 1).Count()
+		db := dataBase.Connect()
 
-		if err != nil {
-			log.Println("205")
+		defer db.Close()
 
-			log.Println(err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
+		// err := db.Model(&studentattendance).Where("id=? and date=?", studentattendance.Sid, studentattendance.Date).Select() // add date in where clause
+		err := db.Model(&studentattendance).Where("sid=? and date=? and month=? and year=? ", studentattendance.Sid, time.Now().Day(), int(time.Now().Month()), time.Now().Year()).Select() // add date in where claise
 
-		po_count, err := db.Model(&punchtable).Where("aid=? and type=?", aid, 2).Count()
+		if err == pg.ErrNoRows {
+			//  studentattendace.PunchIntime=time.Now()
+			log.Println(studentattendance.Sid)
 
-		if err != nil {
-			log.Println("215")
+			studentattendance.Date = time.Now().Day()
+			studentattendance.Month = int(time.Now().Month())
+			studentattendance.Year = time.Now().Year()
 
-			log.Println(err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		// json.NewEncoder(w).Encode(pi_count)
-		// json.NewEncoder(w).Encode(po_count)
+			_, err := db.Model(&studentattendance).Insert()
+			if err != nil {
+				log.Println("166")
+				log.Println(err)
 
-		if pi_count <= po_count {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			// log punch in
 
-			// punchtable.Time = time.Now()
-			punchtable.Time = time.Now().Add(time.Hour*5 + time.Minute*30)
-
-			punchtable.Type = 1
-			_, err := db.Model(&punchtable).Insert()
+			punchin := &bean.StudentLogPunchs{
+				Aid:  studentattendance.Aid,
+				Time: time.Now().Add(time.Hour*5 + time.Minute*30),
+				Type: 1,
+			}
+			_, err = db.Model(punchin).Insert()
 
 			if err != nil {
-				log.Println("216")
+				log.Println("182")
 
 				log.Println(err)
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
 
+		} else if err != nil {
+			log.Println("190")
+
+			log.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+
 		} else {
 
-			json.NewEncoder(w).Encode("You have already punch in")
-			return
+			aid := studentattendance.Aid
+
+			punchtable := bean.StudentLogPunchs{Aid: aid}
+
+			pi_count, err := db.Model(&punchtable).Where("aid=? and type=?", aid, 1).Count()
+
+			if err != nil {
+				log.Println("205")
+
+				log.Println(err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			po_count, err := db.Model(&punchtable).Where("aid=? and type=?", aid, 2).Count()
+
+			if err != nil {
+				log.Println("215")
+
+				log.Println(err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			// json.NewEncoder(w).Encode(pi_count)
+			// json.NewEncoder(w).Encode(po_count)
+
+			if pi_count <= po_count {
+
+				// punchtable.Time = time.Now()
+				punchtable.Time = time.Now().Add(time.Hour*5 + time.Minute*30)
+
+				punchtable.Type = 1
+				_, err := db.Model(&punchtable).Insert()
+
+				if err != nil {
+					log.Println("216")
+
+					log.Println(err)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+
+			} else {
+
+				json.NewEncoder(w).Encode("You have already punch in")
+				return
+
+			}
 
 		}
 
-	}
+		json.NewEncoder(w).Encode("punch in successful")
+	} else {
+		json.NewEncoder(w).Encode("you are not a student")
+		return
 
-	json.NewEncoder(w).Encode("punch in successful")
+	}
 }
 
 func StudentEntryPunchOut(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	studentattendance := bean.StudentAttendance{}
-
-	_ = json.NewDecoder(r.Body).Decode(&studentattendance)
-
-	db := dataBase.Connect()
-
-	defer db.Close()
-
-	err := db.Model(&studentattendance).Where("sid=? and date=? and month=? and year=? ", studentattendance.Sid, time.Now().Day(), int(time.Now().Month()), time.Now().Year()).Select() // add date in where claise
-	if err == pg.ErrNoRows {
-		json.NewEncoder(w).Encode(" no data found  so go for punch in first")
+	email, err := getValidatedemail(w, r)
+	if err != nil {
+		json.NewEncoder(w).Encode("user is unauthorised")
 		return
 
-	} else if err != nil {
+	}
+	var usr bean.User
+	db := dataBase.Connect()
+	defer db.Close()
+	var role int
+
+	err = db.Model(&usr).Column("role").Where("email=?", email).Select(&role)
+	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
+	}
 
-	} else {
+	if role == 1 {
 
-		aid := studentattendance.Aid
+		studentattendance := bean.StudentAttendance{}
 
-		punchtable := bean.StudentLogPunchs{Aid: aid}
+		_ = json.NewDecoder(r.Body).Decode(&studentattendance)
 
-		pi_count, err := db.Model(&punchtable).Where("aid=? and type=?", aid, 1).Count()
+		db := dataBase.Connect()
 
-		if err != nil {
+		defer db.Close()
+
+		err := db.Model(&studentattendance).Where("sid=? and date=? and month=? and year=? ", studentattendance.Sid, time.Now().Day(), int(time.Now().Month()), time.Now().Year()).Select() // add date in where claise
+		if err == pg.ErrNoRows {
+			json.NewEncoder(w).Encode(" no data found  so go for punch in first")
+			return
+
+		} else if err != nil {
 			log.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
-		}
 
-		po_count, err := db.Model(&punchtable).Where("aid=? and type=?", aid, 2).Count()
+		} else {
 
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
+			aid := studentattendance.Aid
 
-		if pi_count > po_count {
+			punchtable := bean.StudentLogPunchs{Aid: aid}
 
-			// punchtable.Time = time.Now()
-			punchtable.Time = time.Now().Add(time.Hour*5 + time.Minute*30)
-
-			punchtable.Type = 2
-			_, err := db.Model(&punchtable).Insert()
+			pi_count, err := db.Model(&punchtable).Where("aid=? and type=?", aid, 1).Count()
 
 			if err != nil {
 				log.Println(err)
@@ -505,53 +635,107 @@ func StudentEntryPunchOut(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-		} else {
+			po_count, err := db.Model(&punchtable).Where("aid=? and type=?", aid, 2).Count()
 
-			json.NewEncoder(w).Encode("You have already punch out")
-			return
+			if err != nil {
+				log.Println(err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			if pi_count > po_count {
+
+				// punchtable.Time = time.Now()
+				punchtable.Time = time.Now().Add(time.Hour*5 + time.Minute*30)
+
+				punchtable.Type = 2
+				_, err := db.Model(&punchtable).Insert()
+
+				if err != nil {
+					log.Println(err)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+
+			} else {
+
+				json.NewEncoder(w).Encode("You have already punch out")
+				return
+
+			}
 
 		}
 
-	}
+		json.NewEncoder(w).Encode("punch out successful")
+	} else {
+		json.NewEncoder(w).Encode("you are not a student")
+		return
 
-	json.NewEncoder(w).Encode("punch out successful")
+	}
 }
 
 func GetStudentattendance(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	db := dataBase.Connect()
-	defer db.Close()
-	var studentattendance bean.StudentAttendance
-	json.NewDecoder(r.Body).Decode(&studentattendance)
-	var studentattendancedetail []bean.StudentAttendancetemp
-	err := db.Model(&studentattendancedetail).
-		ColumnExpr(" DISTINCT student_attendances.date").
-		Column("student_attendances.month").
-		Column("student_attendances.year").
-		Column("student_log_punchs.time").
-		Column("student_log_punchs.type").
-		Join("inner join student_attendances on student_attendances.aid=student_log_punchs.aid").
-		Table("student_log_punchs").
-		Where("student_attendances.sid=? AND student_attendances.month=? AND student_attendances.year=?", studentattendance.Sid, studentattendance.Month, studentattendance.Year).
-		Select()
 
-	if err == pg.ErrNoRows {
-		json.NewEncoder(w).Encode("no data found with this details ")
+	email, err := getValidatedemail(w, r)
+	if err != nil {
+		json.NewEncoder(w).Encode("user is unauthorised")
 		return
 
-	} else if err != nil {
+	}
+	var usr bean.User
+	db := dataBase.Connect()
+	defer db.Close()
+	var role int
+
+	err = db.Model(&usr).Column("role").Where("email=?", email).Select(&role)
+	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
+	}
+
+	if role == 1 {
+
+		db := dataBase.Connect()
+		defer db.Close()
+		var studentattendance bean.StudentAttendance
+		json.NewDecoder(r.Body).Decode(&studentattendance)
+		var studentattendancedetail []bean.StudentAttendancetemp
+		err := db.Model(&studentattendancedetail).
+			ColumnExpr(" DISTINCT student_attendances.date").
+			Column("student_attendances.month").
+			Column("student_attendances.year").
+			Column("student_log_punchs.time").
+			Column("student_log_punchs.type").
+			Join("inner join student_attendances on student_attendances.aid=student_log_punchs.aid").
+			Table("student_log_punchs").
+			Where("student_attendances.sid=? AND student_attendances.month=? AND student_attendances.year=?", studentattendance.Sid, studentattendance.Month, studentattendance.Year).
+			Select()
+
+		if err == pg.ErrNoRows {
+			json.NewEncoder(w).Encode("no data found with this details ")
+			return
+
+		} else if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+
+		} else {
+			// fmt.Println("Third case")
+			if studentattendancedetail == nil {
+				json.NewEncoder(w).Encode("student with this details doesn't exist")
+
+			}
+			json.NewEncoder(w).Encode(studentattendancedetail)
+			return
+		}
 
 	} else {
-		// fmt.Println("Third case")
-		if studentattendancedetail == nil {
-			json.NewEncoder(w).Encode("student with this details doesn't exist")
-
-		}
-		json.NewEncoder(w).Encode(studentattendancedetail)
+		json.NewEncoder(w).Encode("you are not a student")
 		return
+
 	}
 
 }

@@ -30,17 +30,20 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var userdetails bn.Userdetails
 
 	_ = json.NewDecoder(r.Body).Decode(&userdetails)
-	if userdetails.Role == 1 {
-		AddStudent(w, userdetails.Name, userdetails.Address, userdetails.Class, userdetails.Email)
-		AddUser(w, userdetails.Email, userdetails.Role, userdetails.Password)
+	// if userdetails.Role == 1 {
+	// 	AddStudent(w, userdetails.Name, userdetails.Address, userdetails.Class, userdetails.Email)
+	// 	AddUser(w, userdetails.Email, userdetails.Role, userdetails.Password)
 
-	} else if userdetails.Role == 2 {
+	// } else if userdetails.Role == 2 {
 
-		AddTeacher(w, userdetails.Name, userdetails.Address, userdetails.Email)
-		AddUser(w, userdetails.Email, userdetails.Role, userdetails.Password)
+	// 	AddTeacher(w, userdetails.Name, userdetails.Address, userdetails.Email)
+	// 	AddUser(w, userdetails.Email, userdetails.Role, userdetails.Password)
 
-	} else {
+	// } else {
+	if userdetails.Role == 3 {
+
 		AddUser(w, userdetails.Email, userdetails.Role, userdetails.Password)
 	}
+	// }
 
 }
