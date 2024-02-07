@@ -27,7 +27,7 @@ func AddUser(w http.ResponseWriter, email string, role int, password string) {
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
-	var userdetails bn.Userdetails
+	var userdetails bn.User
 
 	_ = json.NewDecoder(r.Body).Decode(&userdetails)
 	// if userdetails.Role == 1 {
@@ -43,6 +43,11 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	if userdetails.Role == 3 {
 
 		AddUser(w, userdetails.Email, userdetails.Role, userdetails.Password)
+
+	} else {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode("only principle can register")
+		return
 	}
 	// }
 

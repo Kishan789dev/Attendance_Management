@@ -2,6 +2,8 @@ package bean
 
 import (
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 type Student struct {
@@ -109,4 +111,14 @@ type Userdetails struct {
 	Email     string   `json:"email" sql:"email"`
 	Role      int      `json:"role" sql:"role"`
 	Password  string   `jso:"password" sql:"password"`
+}
+
+type Credentials struct {
+	Useremail string `json:"useremail"`
+	Password  string `json:"password"`
+}
+
+type Claims struct {
+	Useremail string `json:"useremail"`
+	jwt.StandardClaims
 }
