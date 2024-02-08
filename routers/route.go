@@ -2,6 +2,7 @@ package routers
 
 import (
 	"github.com/gorilla/mux"
+	auth "github.com/kk/attendance_management/authentication"
 	rh "github.com/kk/attendance_management/restHandler"
 )
 
@@ -9,7 +10,7 @@ func InitialiseRouter(r2 *mux.Router) {
 
 	// r2.HandleFunc("/refresh", r/h.Refresh).Methods("GET")
 
-	r2.HandleFunc("/login", rh.Login).Methods("POST")
+	r2.HandleFunc("/login", auth.Login).Methods("POST")
 	// r2.HandleFunc("/home", rh.Home).Methods("GET")
 	r2.HandleFunc("/register", rh.Register).Methods("POST")
 
@@ -25,7 +26,7 @@ func InitialiseRouter(r2 *mux.Router) {
 	r2.HandleFunc("/studentattendance/punchout", rh.StudentEntryPunchOut).Methods("POST")
 
 	r2.HandleFunc("/studentattendance/student", rh.GetStudentattendance).Methods("GET")
-	r2.HandleFunc("/studentattendance", rh.GetClassattendance).Methods("GET")
+	r2.HandleFunc("/classattendance", rh.GetClassattendance).Methods("GET")
 
 	// r2.HandleFunc("/studentattendance/{class}/{date}/{month}/{year}", rh.GetClassattendance).Methods("GET")
 

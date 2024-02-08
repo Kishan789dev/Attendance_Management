@@ -20,7 +20,7 @@ func AddUser(w http.ResponseWriter, email string, role int, password string) {
 
 	_, err := db.Model(&users).Insert()
 	if err != nil {
-		log.Fatal(err, " add user fun")
+		log.Fatal(err, "add user fun")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
