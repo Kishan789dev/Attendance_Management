@@ -12,7 +12,7 @@ func InitialiseRouter(r2 *mux.Router) {
 
 	r2.HandleFunc("/login", auth.Login).Methods("POST")
 	// r2.HandleFunc("/home", rh.Home).Methods("GET")
-	r2.HandleFunc("/register", rh.Register).Methods("POST")
+	r2.HandleFunc("/register", auth.Register).Methods("POST")
 
 	r2.HandleFunc("/student/{id}", rh.GetStudent).Methods("GET")
 	r2.HandleFunc("/students", rh.GetStudents).Methods("GET")

@@ -139,7 +139,7 @@ func GetTeacher(w http.ResponseWriter, r *http.Request) {
 func AddTeacher(w http.ResponseWriter, r *http.Request) {
 	// fmt.Print("hello2")
 	w.Header().Set("Content-Type", "application/json")
-	role, err := getRole(w, r)
+	role, err := auth.getRole(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -168,7 +168,7 @@ func AddTeacher(w http.ResponseWriter, r *http.Request) {
 		}
 
 		json.NewEncoder(w).Encode(teacher)
-		AddUser(w, userdetails.Email, 2, userdetails.Password)
+		auth.AddUser(w, userdetails.Email, 2, userdetails.Password)
 
 	} else {
 		json.NewEncoder(w).Encode("only principle can add teacher")
@@ -181,7 +181,7 @@ func UpdateTeacher(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	role, err := getRole(w, r)
+	role, err := auth.getRole(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -216,7 +216,7 @@ func UpdateTeacher(w http.ResponseWriter, r *http.Request) {
 
 func DeleteTeacher(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	role, err := getRole(w, r)
+	role, err := auth.getRole(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return

@@ -17,87 +17,9 @@ import (
 	"github.com/kk/attendance_management/dataBase"
 )
 
-// authorization
-
-// var users = map[string]string{
-// 	"user1": "password1",
-// 	"user2": "password2",
-// }
-
-// func Login(w http.ResponseWriter, r *http.Request) {
-
-// 	var credentialStudent bean.Credentials
-// 	// var credentialTeacher bean.Teacher
-// 	err := json.NewDecoder(r.Body).Decode(&credentialStudent)
-// 	// fmt.Println(credentialStudent)
-// 	// err = json.NewDecoder(r.Body).Decode(&credentialTeacher)
-// 	var getpassword bean.User
-
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		return
-// 	}
-// 	db := dataBase.Connect()
-
-// 	defer db.Close()
-// 	var mypass string
-
-// 	err = db.Model(&getpassword).Column("password").Where("email=?", credentialStudent.Useremail).Select(&mypass)
-// 	if err != nil {
-// 		// log.Println("k0")
-// 		if err == pg.ErrNoRows {
-
-// 			w.WriteHeader(http.StatusUnauthorized)
-// 			return
-// 		}
-// 		w.WriteHeader(http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	expectedPassword := credentialStudent.Password
-// 	actualPassword := mypass
-// 	log.Println("k1")
-
-// 	if expectedPassword != actualPassword {
-// 		w.WriteHeader(http.StatusUnauthorized)
-// 		return
-// 	}
-// 	log.Println("k2")
-
-// 	// expectedPassword, ok := users[credentials.Username]
-
-// 	expirationTime := time.Now().Add(time.Minute * 5)
-
-// 	claims := &bean.Claims{
-// 		Useremail: credentialStudent.Useremail,
-// 		StandardClaims: jwt.StandardClaims{
-// 			ExpiresAt: expirationTime.Unix(),
-// 		},
-// 	}
-
-// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-// 	tokenString, err := token.SignedString(jwtKey)
-
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	http.SetCookie(w,
-// 		&http.Cookie{
-// 			Name:    "token",
-// 			Value:   tokenString,
-// 			Expires: expirationTime,
-// 		})
-// 	log.Println("kisahn")
-
-// }
-
-// ********************************STUDENT************************************************
-
 func GetStudents(w http.ResponseWriter, r *http.Request) {
 
-	// w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 
 	_, err := auth.ValidateTokenAndGetEmail(w, r)
 	if err != nil {
@@ -105,8 +27,8 @@ func GetStudents(w http.ResponseWriter, r *http.Request) {
 		return
 
 	}
-	students, err := services.GetStudentsSvc()
 
+	students, err := services.GetStudentsSvc()
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -121,7 +43,6 @@ func GetStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	_, err := auth.ValidateTokenAndGetEmail(w, r)
-
 	if err != nil {
 		json.NewEncoder(w).Encode("user is unauthorised")
 		return
@@ -144,46 +65,52 @@ func GetStudent(w http.ResponseWriter, r *http.Request) {
 func AddStudent(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
-	role, err := getRole(w, r)
+	role, err := auth.GetRole(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	if role == 3 {
-		var userdetails bean.Userdetails
-		_ = json.NewDecoder(r.Body).Decode(&userdetails)
-		db := dataBase.Connect()
-		defer db.Close()
 
-		err, student := services.AddStudentSvc(userdetails)
-
-		student := bean.Student{Name: userdetails.Name, Address: userdetails.Address, Class: userdetails.Class, Email: userdetails.Email}
-
-		if _, err := db.Model(&student).Insert(); err != nil {
-			log.Println(err)
-			// json.NewEncoder(w).Encode("error is line no 77")
-
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		json.NewEncoder(w).Encode(student)
-		// making an entry in user table
-
-		AddUser(w, userdetails.Email, 1, userdetails.Password)
-
-	} else {
+	// Todo - make a function isPrincipal to check...
+	if role != 3 {
 		json.NewEncoder(w).Encode("only principle can add student")
 		return
-
 	}
+
+	var userdetails bean.Userdetails
+	err = json.NewDecoder(r.Body).Decode(&userdetails)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	student := bean.Student{
+		Name:    userdetails.Name,
+		Address: userdetails.Address,
+		Class:   userdetails.Class,
+		Email:   userdetails.Email,
+	}
+
+	_, err = services.AddStudentService(student)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = auth.AddUser(userdetails.Email, 1, userdetails.Password)
+	if err != nil {
+		json.NewEncoder(w).Encode("error in adding user to user table")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func UpdateStudent(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	role, err := getRole(w, r)
+	role, err := auth.GetRole(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -222,7 +149,7 @@ func UpdateStudent(w http.ResponseWriter, r *http.Request) {
 func DeleteStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	role, err := getRole(w, r)
+	role, err := auth.GetRole(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return

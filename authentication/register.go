@@ -1,4 +1,4 @@
-package restHandler
+package authentication
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 	"github.com/kk/attendance_management/dataBase"
 )
 
-func AddUser(w http.ResponseWriter, email string, role int, password string) {
+func AddUser(email string, role int, password string) error {
 	var users bn.User
 	users.Email = email
 	users.Role = role
@@ -21,29 +21,20 @@ func AddUser(w http.ResponseWriter, email string, role int, password string) {
 	_, err := db.Model(&users).Insert()
 	if err != nil {
 		log.Fatal(err, "add user fun")
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		return err
 	}
+	return nil
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	var userdetails bn.User
 
 	_ = json.NewDecoder(r.Body).Decode(&userdetails)
-	// if userdetails.Role == 1 {
-	// 	AddStudent(w, userdetails.Name, userdetails.Address, userdetails.Class, userdetails.Email)
-	// 	AddUser(w, userdetails.Email, userdetails.Role, userdetails.Password)
-
-	// } else if userdetails.Role == 2 {
-
-	// 	AddTeacher(w, userdetails.Name, userdetails.Address, userdetails.Email)
-	// 	AddUser(w, userdetails.Email, userdetails.Role, userdetails.Password)
-
-	// } else {
 	if userdetails.Role == 3 {
-
-		AddUser(w, userdetails.Email, userdetails.Role, userdetails.Password)
-
+		err := AddUser(userdetails.Email, userdetails.Role, userdetails.Password)
+		if err != nil {
+			return
+		}
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode("only principle can register")

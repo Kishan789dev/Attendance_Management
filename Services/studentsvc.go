@@ -21,14 +21,13 @@ func GetStudentSvc(id int) (bean.Student, error) {
 	return students, nil
 }
 
-func AddStudentSvc(userdeatails bean.Userdetails) {
+func AddStudentService(student bean.Student) (*bean.Student, error) {
 
-}
+	students, err := repository.AddStudentService(student)
+	if err != nil {
 
-func UpdateStudentSvc() {
+		return students, err
+	}
 
-}
-
-func DeleteStudentSvc() {
-
+	return students, nil
 }

@@ -1,18 +1,17 @@
-package restHandler
+package authentication
 
 import (
 	"encoding/json"
 	"log"
 	"net/http"
 
-	auth "github.com/kk/attendance_management/authentication"
 	bn "github.com/kk/attendance_management/bean"
 	"github.com/kk/attendance_management/dataBase"
 )
 
-func getRole(w http.ResponseWriter, r *http.Request) (int, error) {
+func GetRole(w http.ResponseWriter, r *http.Request) (int, error) {
 
-	email, err := auth.ValidateTokenAndGetEmail(w, r)
+	email, err := ValidateTokenAndGetEmail(w, r)
 	if err != nil {
 		json.NewEncoder(w).Encode("user is unauthorised")
 		return 0, err
