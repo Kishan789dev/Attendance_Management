@@ -67,12 +67,24 @@ type TeacherLogPunchs struct {
 	Type int       `json:"type"`
 }
 
+type TeacherLogPunchstemp struct {
+	// TableName struct{} `sql:"teacher_log_punchs" json:"-"`
+	// Lid int `json:"-"`
+	// Aid int `json:"-"`
+
+	Date  int       `json:"-" sql:"date"`
+	Month int       `json:"-" sql:"month"`
+	Year  int       `json:"-" sql:"year"`
+	Time  time.Time `json:"time"  sql:"time"`
+	Type  int       `json:"type"   sql:"type"`
+}
+
 type TeacherAttendancetemp struct {
 	TableName struct{} `sql:"teacher_log_punchs" json:"-"`
 
-	Date  int       `json:"date" sql:"date"`
-	Month int       `json:"month" sql:"month"`
-	Year  int       `json:"year" sql:"year"`
+	Date  int       `json:"-" sql:"date"`
+	Month int       `json:"-" sql:"month"`
+	Year  int       `json:"-" sql:"year"`
 	Time  time.Time `json:"time"  sql:"time"`
 	Type  int       `json:"type"   sql:"type"`
 }
@@ -88,12 +100,12 @@ type Classtemp struct {
 type ClasstempRes struct {
 	TableName struct{} `sql:"students" json:"-"`
 
-	Sid   int    `json:"sid" sql:"sid"`
+	Sid   int    `json:"-" sql:"sid"`
 	Name  string `json:"name" sql:"name"`
-	Class int    `json:"class" sql:"class"`
-	Date  int    `json:"date" sql:"date"`
-	Month int    `json:"month" sql:"month"`
-	Year  int    `json:"year" sql:"year"`
+	Class int    `json:"-" sql:"class"`
+	Date  int    `json:"-" sql:"date"`
+	Month int    `json:"-" sql:"month"`
+	Year  int    `json:"-" sql:"year"`
 }
 
 type User struct {
@@ -109,8 +121,8 @@ type Userdetails struct {
 	Address   string   `json:"address" sql:"address"`
 	Class     int      `json:"class" sql:"class"`
 	Email     string   `json:"email" sql:"email"`
-	Role      int      `json:"role" sql:"role"`
-	Password  string   `jso:"password" sql:"password"`
+	// Role      int      `json:"role" sql:"role"`
+	Password string `jso:"password" sql:"password"`
 }
 
 type Credentials struct {

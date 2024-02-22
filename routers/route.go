@@ -25,8 +25,8 @@ func InitialiseRouter(r2 *mux.Router) {
 	r2.HandleFunc("/studentattendance/punchin", rh.StudentEntryPunchin).Methods("POST")
 	r2.HandleFunc("/studentattendance/punchout", rh.StudentEntryPunchOut).Methods("POST")
 
-	r2.HandleFunc("/studentattendance/student", rh.GetStudentattendance).Methods("GET")
-	r2.HandleFunc("/classattendance", rh.GetClassattendance).Methods("GET")
+	r2.HandleFunc("/studentattendance/student", rh.GetStudentattendance).Methods("POST")
+	r2.HandleFunc("/classattendance", rh.GetClassattendance).Methods("POST")
 
 	// r2.HandleFunc("/studentattendance/{class}/{date}/{month}/{year}", rh.GetClassattendance).Methods("GET")
 
@@ -43,8 +43,8 @@ func InitialiseRouter(r2 *mux.Router) {
 	// ********************Teacher attendance*****************
 
 	r2.HandleFunc("/teacherattendance/punchin", rh.TeacherEntryPunchin).Methods("POST")
-	r2.HandleFunc("/teacherattendance/punchout", rh.TeacherEntryPunchout).Methods("POST")
+	r2.HandleFunc("/teacherattendance/punchout", rh.TeacherEntryPunchOut).Methods("POST")
 
-	r2.HandleFunc("/teacherattendance", rh.GetTeacherattendance).Methods("GET")
+	r2.HandleFunc("/teacherattendance", rh.GetTeacherattendance).Methods("POST")
 
 }

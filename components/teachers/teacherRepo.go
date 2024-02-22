@@ -1,4 +1,4 @@
-package repository
+package teachers
 
 import (
 	"errors"

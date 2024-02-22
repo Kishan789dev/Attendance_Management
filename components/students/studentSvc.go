@@ -1,4 +1,4 @@
-package services
+package students
 
 import (
 	"fmt"

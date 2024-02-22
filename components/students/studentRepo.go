@@ -1,4 +1,4 @@
-package repository
+package students
 
 import (
 	"errors"

@@ -1,4 +1,4 @@
-package restHandler
+package teachers
 
 import (
 	"encoding/json"
