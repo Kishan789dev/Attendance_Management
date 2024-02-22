@@ -55,7 +55,7 @@ func GetStudentRepo(id int) (bean.Student, error) {
 	return students, nil
 }
 
-func AddStudentService(student *bean.Student) error {
+func AddStudentRepo(student *bean.Student) error {
 	db := dataBase.Connect()
 	defer db.Close()
 

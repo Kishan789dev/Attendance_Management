@@ -11,8 +11,9 @@ import (
 
 	"github.com/go-pg/pg"
 	"github.com/gorilla/mux"
-	services "github.com/kk/attendance_management/Services"
-	auth "github.com/kk/attendance_management/authentication"
+	"github.com/kk/attendance_management/authentication/getrole"
+	token "github.com/kk/attendance_management/authentication/tokenvalidation"
+
 	bean "github.com/kk/attendance_management/bean"
 	"github.com/kk/attendance_management/dataBase"
 )
@@ -77,7 +78,7 @@ import (
 func GetTeachers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	_, err := auth.ValidateTokenAndGetEmail(w, r)
+	_, err := token.ValidateTokenAndGetEmail(w, r)
 	if err != nil {
 		json.NewEncoder(w).Encode("user is unauthorised")
 		return
@@ -101,7 +102,7 @@ func GetTeacher(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	// log.Println("dsjflsdflsdjflksd")
 
-	_, err := auth.ValidateTokenAndGetEmail(w, r)
+	_, err := token.ValidateTokenAndGetEmail(w, r)
 	// log.Println(email)
 
 	if err != nil {
@@ -141,7 +142,7 @@ func GetTeacher(w http.ResponseWriter, r *http.Request) {
 func AddTeacher(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
-	role, err := auth.GetRole(w, r)
+	role, err := getrole.GetRole(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -157,7 +158,7 @@ func AddTeacher(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&userdetails)
 
 	teacher := bean.Teacher{Name: userdetails.Name, Address: userdetails.Address, Email: userdetails.Email}
-	err = services.AddTeacherSvc(&teacher, &userdetails)
+	err = AddTeacherSvc(&teacher, &userdetails)
 
 	if err != nil {
 
@@ -175,7 +176,7 @@ func UpdateTeacher(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	role, err := auth.GetRole(w, r)
+	role, err := getrole.GetRole(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -210,7 +211,7 @@ func UpdateTeacher(w http.ResponseWriter, r *http.Request) {
 
 func DeleteTeacher(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	role, err := auth.GetRole(w, r)
+	role, err := getrole.GetRole(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -299,7 +300,7 @@ func DeleteTeacher(w http.ResponseWriter, r *http.Request) {
 // func TeacherEntryPunchin(w http.ResponseWriter, r *http.Request) {
 // 	w.Header().Set("Content-Type", "application/json")
 
-// 	email, err := auth.ValidateTokenAndGetEmail(w, r)
+// 	email, err := token.ValidateTokenAndGetEmail(w, r)
 // 	fmt.Println(email)
 // 	// fmt.Println("kjgdjkhgh")
 
@@ -426,7 +427,7 @@ func DeleteTeacher(w http.ResponseWriter, r *http.Request) {
 // func TeacherEntryPunchout(w http.ResponseWriter, r *http.Request) {
 // 	w.Header().Set("Content-Type", "application/json")
 
-// 	email, err := auth.ValidateTokenAndGetEmail(w, r)
+// 	email, err := token.ValidateTokenAndGetEmail(w, r)
 // 	log.Println(email)
 // 	if err != nil {
 // 		w.WriteHeader(http.StatusUnauthorized)
@@ -510,14 +511,14 @@ func TeacherEntryPunchin(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	email, err := auth.ValidateTokenAndGetEmail(w, r)
+	email, err := token.ValidateTokenAndGetEmail(w, r)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	err, CustomErrTyp, tid := services.TeacherEntryPunchinSvc(email)
+	err, CustomErrTyp, tid := TeacherEntryPunchinSvc(email)
 	log.Println("tidddd", tid)
 	log.Println("errtypeeee", CustomErrTyp)
 
@@ -529,7 +530,7 @@ func TeacherEntryPunchin(w http.ResponseWriter, r *http.Request) {
 	var aid int
 	if CustomErrTyp == 1 {
 
-		err, aid = services.TeacherAttendanceWithPunchData(tid)
+		err, aid = TeacherAttendanceWithPunchData(tid)
 		fmt.Println("AIDDDDDD", aid)
 
 		if err != nil {
@@ -538,19 +539,21 @@ func TeacherEntryPunchin(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		json.NewEncoder(w).Encode("Success")
+		return
 
 	}
-	// err, aid = services.TeacherAttendanceWithPunchData(tid )
+	// err, aid = TeacherAttendanceWithPunchData(tid )
 
 	if err != nil {
 		fmt.Println("jjjjjjjjj")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	// err, aid = services.TeacherAttendanceWithPunchData(tid )
+	// err, aid = TeacherAttendanceWithPunchData(tid )
 	log.Println("aid", tid)
 	aid = tid
-	err, str := services.TeacherPunchEntryInTable(aid)
+	err, str := TeacherPunchEntryInTable(aid)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -564,14 +567,14 @@ func TeacherEntryPunchOut(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	email, err := auth.ValidateTokenAndGetEmail(w, r)
+	email, err := token.ValidateTokenAndGetEmail(w, r)
 	if err != nil {
 		log.Println("logout", err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	err, CustomErrTyp, _, aid := services.TeacherEntryPunchOutSvc(email)
+	err, CustomErrTyp, _, aid := TeacherEntryPunchOutSvc(email)
 	if CustomErrTyp == 0 {
 		json.NewEncoder(w).Encode("you are not a Teacher")
 		return
@@ -595,7 +598,7 @@ func TeacherEntryPunchOut(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("errrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr", aid)
 
-	err, str := services.TeacherPunchOutEntryInTable(aid)
+	err, str := TeacherPunchOutEntryInTable(aid)
 	if err != nil {
 		// log.Println("logout777777", err)
 
@@ -609,13 +612,13 @@ func TeacherEntryPunchOut(w http.ResponseWriter, r *http.Request) {
 func GetTeacherattendance(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	role, err := auth.GetRole(w, r)
+	role, err := getrole.GetRole(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	email, err := auth.ValidateTokenAndGetEmail(w, r)
+	email, err := token.ValidateTokenAndGetEmail(w, r)
 	log.Println(email)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -631,7 +634,7 @@ func GetTeacherattendance(w http.ResponseWriter, r *http.Request) {
 	}
 	if role == 2 {
 
-		err = services.GetTeacherattendanceSvcTidGetting(email, &tid)
+		err = GetTeacherattendanceSvcTidGetting(email, &tid)
 
 		if err != nil {
 			// making role as student so that it can't proceed  further
@@ -654,7 +657,7 @@ func GetTeacherattendance(w http.ResponseWriter, r *http.Request) {
 			tid = teacherattendance.Tid
 		}
 
-		err, teacherattendancedetail := services.GetTeacherAttendanceDetailsSvc(tid, teacherattendance.Month, teacherattendance.Year)
+		err, teacherattendancedetail := GetTeacherAttendanceDetailsSvc(tid, teacherattendance.Month, teacherattendance.Year)
 
 		if err != nil {
 			fmt.Println("oooooo")
@@ -685,7 +688,7 @@ func GetClassattendance(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	role, err := auth.GetRole(w, r)
+	role, err := getrole.GetRole(w, r)
 	// log.Println(email)
 	if err != nil {
 		// w.WriteHeader(http.StatusUnauthorized)
@@ -713,7 +716,7 @@ func GetClassattendance(w http.ResponseWriter, r *http.Request) {
 
 	json.NewDecoder(r.Body).Decode(&classtemp)
 
-	err, classdata := services.GetClassattendanceSvc(&classtemp)
+	err, classdata := GetClassattendanceSvc(&classtemp)
 
 	// err := db.Model(&student).Where("class =?", classtemp.Class).Select()
 

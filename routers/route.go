@@ -2,31 +2,32 @@ package routers
 
 import (
 	"github.com/gorilla/mux"
-	auth "github.com/kk/attendance_management/authentication"
-	rh "github.com/kk/attendance_management/restHandler"
+	"github.com/kk/attendance_management/authentication/login"
+	"github.com/kk/attendance_management/components/students"
+	"github.com/kk/attendance_management/components/teachers"
 )
 
 func InitialiseRouter(r2 *mux.Router) {
 
 	// r2.HandleFunc("/refresh", r/h.Refresh).Methods("GET")
 
-	r2.HandleFunc("/login", auth.Login).Methods("POST")
+	r2.HandleFunc("/login", login.Login).Methods("POST")
 	// r2.HandleFunc("/home", rh.Home).Methods("GET")
-	r2.HandleFunc("/register", auth.Register).Methods("POST")
+	// r2.HandleFunc("/register", login.Register).Methods("POST")
 
-	r2.HandleFunc("/student/{id}", rh.GetStudent).Methods("GET")
-	r2.HandleFunc("/students", rh.GetStudents).Methods("GET")
-	r2.HandleFunc("/student", rh.AddStudent).Methods("POST")
-	r2.HandleFunc("/student/{id}", rh.UpdateStudent).Methods("PUT")
-	r2.HandleFunc("/student/{id}", rh.DeleteStudent).Methods("DELETE")
+	r2.HandleFunc("/student/{id}", students.GetStudent).Methods("GET")
+	r2.HandleFunc("/students", students.GetStudents).Methods("GET")
+	r2.HandleFunc("/student", students.AddStudent).Methods("POST")
+	r2.HandleFunc("/student/{id}", students.UpdateStudent).Methods("PUT")
+	r2.HandleFunc("/student/{id}", students.DeleteStudent).Methods("DELETE")
 
 	// // ********************Student attendance*****************
 
-	r2.HandleFunc("/studentattendance/punchin", rh.StudentEntryPunchin).Methods("POST")
-	r2.HandleFunc("/studentattendance/punchout", rh.StudentEntryPunchOut).Methods("POST")
+	r2.HandleFunc("/studentattendance/punchin", students.StudentEntryPunchin).Methods("POST")
+	r2.HandleFunc("/studentattendance/punchout", students.StudentEntryPunchOut).Methods("POST")
 
-	r2.HandleFunc("/studentattendance/student", rh.GetStudentattendance).Methods("POST")
-	r2.HandleFunc("/classattendance", rh.GetClassattendance).Methods("POST")
+	r2.HandleFunc("/studentattendance/student", students.GetStudentattendance).Methods("POST")
+	r2.HandleFunc("/classattendance", teachers.GetClassattendance).Methods("POST")
 
 	// r2.HandleFunc("/studentattendance/{class}/{date}/{month}/{year}", rh.GetClassattendance).Methods("GET")
 
@@ -34,17 +35,17 @@ func InitialiseRouter(r2 *mux.Router) {
 
 	// 	// ************Teacher************************************
 
-	r2.HandleFunc("/teacher/{id}", rh.GetTeacher).Methods("GET")
-	r2.HandleFunc("/teachers", rh.GetTeachers).Methods("GET")
-	r2.HandleFunc("/teacher", rh.AddTeacher).Methods("POST")
-	r2.HandleFunc("/teacher/{id}", rh.UpdateTeacher).Methods("PUT")
-	r2.HandleFunc("/teacher/{id}", rh.DeleteTeacher).Methods("DELETE")
+	r2.HandleFunc("/teacher/{id}", teachers.GetTeacher).Methods("GET")
+	r2.HandleFunc("/teachers", teachers.GetTeachers).Methods("GET")
+	r2.HandleFunc("/teacher", teachers.AddTeacher).Methods("POST")
+	r2.HandleFunc("/teacher/{id}", teachers.UpdateTeacher).Methods("PUT")
+	r2.HandleFunc("/teacher/{id}", teachers.DeleteTeacher).Methods("DELETE")
 
 	// ********************Teacher attendance*****************
 
-	r2.HandleFunc("/teacherattendance/punchin", rh.TeacherEntryPunchin).Methods("POST")
-	r2.HandleFunc("/teacherattendance/punchout", rh.TeacherEntryPunchOut).Methods("POST")
+	r2.HandleFunc("/teacherattendance/punchin", teachers.TeacherEntryPunchin).Methods("POST")
+	r2.HandleFunc("/teacherattendance/punchout", teachers.TeacherEntryPunchOut).Methods("POST")
 
-	r2.HandleFunc("/teacherattendance", rh.GetTeacherattendance).Methods("POST")
+	r2.HandleFunc("/teacherattendance", teachers.GetTeacherattendance).Methods("POST")
 
 }

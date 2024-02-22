@@ -4,16 +4,17 @@ import (
 	"fmt"
 	"log"
 
-	auth "github.com/kk/attendance_management/authentication"
+	"github.com/kk/attendance_management/components/users"
+
 	"github.com/kk/attendance_management/bean"
-	repository "github.com/kk/attendance_management/repository"
+	// repository "github.com/kk/attendance_management/repository"
 )
 
 func AddTeacherSvc(teacher *bean.Teacher, userdetails *bean.Userdetails) error {
 
-	err := repository.AddTeacherRepo(teacher)
+	err := AddTeacherRepo(teacher)
 	if err == nil {
-		auth.AddUser(userdetails.Email, 2, userdetails.Password)
+		users.AddUser(userdetails.Email, 2, userdetails.Password)
 		return nil
 	}
 	return err
@@ -23,12 +24,12 @@ func AddTeacherSvc(teacher *bean.Teacher, userdetails *bean.Userdetails) error {
 // punchin
 
 func TeacherAttendanceWithPunchData(tid int) (error, int) {
-	aid, err := repository.TeacherEntryPunchinEntryRepo(tid)
+	aid, err := TeacherEntryPunchinEntryRepo(tid)
 	if err != nil {
 		return err, 0
 	}
 
-	err = repository.TeacherEntryPunchinEntryTableRepo(aid)
+	err = TeacherEntryPunchinEntryTableRepo(aid)
 	if err != nil {
 		return err, 1
 	}
@@ -37,14 +38,14 @@ func TeacherAttendanceWithPunchData(tid int) (error, int) {
 }
 
 func TeacherPunchEntryInTable(aid int) (error, string) {
-	pi_count, po_count, err := repository.TeacherEntryOnlyPunchinSvc(aid)
+	pi_count, po_count, err := TeacherEntryOnlyPunchinSvc(aid)
 	if err != nil {
 		return err, ""
 	}
 
 	if pi_count <= po_count {
 
-		err = repository.TeacherPunchingSvc(aid)
+		err = TeacherPunchingSvc(aid)
 		if err != nil {
 
 			return err, ""
@@ -59,7 +60,7 @@ func TeacherPunchEntryInTable(aid int) (error, string) {
 }
 
 func TeacherEntryPunchinSvc(email string) (error, int, int) {
-	err, typ, tid := repository.TeacherEntryPunchinRepo(email)
+	err, typ, tid := TeacherEntryPunchinRepo(email)
 	fmt.Println("jdsjsfjsjdsjsdjdsjdsjdsjdssdjjs", tid)
 	if err != nil {
 		log.Println("tidddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
@@ -74,7 +75,7 @@ func TeacherEntryPunchinSvc(email string) (error, int, int) {
 // var aid int
 
 func TeacherEntryPunchOutSvc(email string) (error, int, int, int) {
-	err, typ, tid, aid := repository.TeacherEntryPunchOutRepo(email)
+	err, typ, tid, aid := TeacherEntryPunchOutRepo(email)
 	if err != nil {
 
 		return err, typ, tid, aid
@@ -85,12 +86,12 @@ func TeacherEntryPunchOutSvc(email string) (error, int, int, int) {
 }
 
 // func TeacherAttendanceWithPunchOutData() (error, int) {
-// 	// aid, err := repository.TeacherEntryPunchinEntryRepo()
+// 	// aid, err := TeacherEntryPunchinEntryRepo()
 // 	// if err != nil {
 // 	// 	return err, 0
 // 	// }
 
-// 	err := repository.TeacherEntryPunchinEntryTableRepo(aid)
+// 	err := TeacherEntryPunchinEntryTableRepo(aid)
 // 	if err != nil {
 // 		return err, 0
 // 	}
@@ -99,14 +100,14 @@ func TeacherEntryPunchOutSvc(email string) (error, int, int, int) {
 // }
 
 func TeacherPunchOutEntryInTable(aid int) (error, string) {
-	pi_count, po_count, err := repository.TeacherEntryOnlyPunchOutSvc(aid)
+	pi_count, po_count, err := TeacherEntryOnlyPunchOutSvc(aid)
 	if err != nil {
 		return err, ""
 	}
 
 	if pi_count > po_count {
 
-		err = repository.TeacherPunchingOutRepo(aid)
+		err = TeacherPunchingOutRepo(aid)
 		if err != nil {
 
 			return err, ""
@@ -125,13 +126,13 @@ func TeacherPunchOutEntryInTable(aid int) (error, string) {
 
 func GetTeacherattendanceSvcTidGetting(email string, tid *int) error {
 
-	return repository.GetTeacherattendanceRepoTidGetting(email, tid)
+	return GetTeacherattendanceRepoTidGetting(email, tid)
 
 }
 
 func GetTeacherAttendanceDetailsSvc(tid int, month int, year int) (error, []bean.TeacherAttendancetemp) {
 
-	return repository.GetTeacherAttendanceDetailsRepo(tid, month, year)
+	return GetTeacherAttendanceDetailsRepo(tid, month, year)
 
 }
 
@@ -139,5 +140,5 @@ func GetTeacherAttendanceDetailsSvc(tid int, month int, year int) (error, []bean
 
 func GetClassattendanceSvc(classtemp *bean.Classtemp) (error, *[]bean.ClasstempRes) {
 
-	return repository.GetClassattendanceRepo(classtemp)
+	return GetClassattendanceRepo(classtemp)
 }

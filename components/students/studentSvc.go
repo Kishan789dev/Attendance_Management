@@ -5,18 +5,18 @@ import (
 	"log"
 
 	"github.com/kk/attendance_management/bean"
-	repository "github.com/kk/attendance_management/repository"
+	// repository "github.com/kk/attendance_management/repository"
 )
 
 func GetStudentsSvc() ([]bean.Student, error) {
 
-	students, err := repository.GetStudentsRepo()
+	students, err := GetStudentsRepo()
 	return students, err
 }
 
 func GetStudentSvc(id int) (bean.Student, error) {
 
-	students, err := repository.GetStudentRepo(id)
+	students, err := GetStudentRepo(id)
 	if err != nil {
 		return students, err
 	}
@@ -26,7 +26,7 @@ func GetStudentSvc(id int) (bean.Student, error) {
 
 func AddStudentService(student *bean.Student) error {
 
-	err := repository.AddStudentService(student)
+	err := AddStudentRepo(student)
 	if err != nil {
 
 		return err
@@ -38,12 +38,12 @@ func AddStudentService(student *bean.Student) error {
 // punchin
 
 func StudentAttendanceWithPunchData(sid int) (error, int) {
-	aid, err := repository.StudentEntryPunchinEntryRepo(sid)
+	aid, err := StudentEntryPunchinEntryRepo(sid)
 	if err != nil {
 		return err, 0
 	}
 
-	err = repository.StudentEntryPunchinEntryTableRepo(aid)
+	err = StudentEntryPunchinEntryTableRepo(aid)
 	if err != nil {
 		return err, 1
 	}
@@ -52,14 +52,14 @@ func StudentAttendanceWithPunchData(sid int) (error, int) {
 }
 
 func StudentPunchEntryInTable(aid int) (error, string) {
-	pi_count, po_count, err := repository.StudentEntryOnlyPunchinSvc(aid)
+	pi_count, po_count, err := StudentEntryOnlyPunchinSvc(aid)
 	if err != nil {
 		return err, ""
 	}
 
 	if pi_count <= po_count {
 
-		err = repository.StudentPunchingSvc(aid)
+		err = StudentPunchingSvc(aid)
 		if err != nil {
 			log.Println("lololololololololooloolol", err)
 
@@ -75,7 +75,7 @@ func StudentPunchEntryInTable(aid int) (error, string) {
 }
 
 func StudentEntryPunchinSvc(email string) (error, int, int) {
-	err, typ, sid := repository.StudentEntryPunchinRepo(email)
+	err, typ, sid := StudentEntryPunchinRepo(email)
 	fmt.Println("jdsjsfjsjdsjsdjdsjdsjdsjdssdjjs", sid)
 	if err != nil {
 		log.Println("sidddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
@@ -90,7 +90,7 @@ func StudentEntryPunchinSvc(email string) (error, int, int) {
 var aid int
 
 func StudentEntryPunchOutSvc(email string) (error, int, int, int) {
-	err, typ, sid, aid := repository.StudentEntryPunchOutRepo(email)
+	err, typ, sid, aid := StudentEntryPunchOutRepo(email)
 	if err != nil {
 
 		return err, typ, sid, aid
@@ -101,12 +101,12 @@ func StudentEntryPunchOutSvc(email string) (error, int, int, int) {
 }
 
 // func StudentAttendanceWithPunchOutData() (error, int) {
-// 	// aid, err := repository.StudentEntryPunchinEntryRepo()
+// 	// aid, err := StudentEntryPunchinEntryRepo()
 // 	// if err != nil {
 // 	// 	return err, 0
 // 	// }
 
-// 	err := repository.StudentEntryPunchinEntryTableRepo(aid)
+// 	err := StudentEntryPunchinEntryTableRepo(aid)
 // 	if err != nil {
 // 		return err, 0
 // 	}
@@ -115,14 +115,14 @@ func StudentEntryPunchOutSvc(email string) (error, int, int, int) {
 // }
 
 func StudentPunchOutEntryInTable(aid int) (error, string) {
-	pi_count, po_count, err := repository.StudentEntryOnlyPunchOutSvc(aid)
+	pi_count, po_count, err := StudentEntryOnlyPunchOutSvc(aid)
 	if err != nil {
 		return err, ""
 	}
 
 	if pi_count > po_count {
 
-		err = repository.StudentPunchingOutRepo(aid)
+		err = StudentPunchingOutRepo(aid)
 		if err != nil {
 
 			return err, ""
@@ -140,7 +140,7 @@ func StudentPunchOutEntryInTable(aid int) (error, string) {
 // Getstudents attendance
 
 func GetStudentsAttendanceEmailSvc(email string) (error, int) {
-	err, sid := repository.GetSid(email)
+	err, sid := GetSid(email)
 	if err != nil {
 		return err, 0
 
@@ -149,5 +149,5 @@ func GetStudentsAttendanceEmailSvc(email string) (error, int) {
 
 }
 func FetchAttendanceFromDetailsSvc(studentattendance *bean.StudentAttendance) (*[]bean.StudentAttendancetemp, error) {
-	return repository.FetchAttendanceFromDetailsRepo(studentattendance)
+	return FetchAttendanceFromDetailsRepo(studentattendance)
 }

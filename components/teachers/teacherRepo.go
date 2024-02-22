@@ -15,7 +15,10 @@ import (
 func AddTeacherRepo(teacher *bean.Teacher) error {
 	db := dataBase.Connect()
 	defer db.Close()
-	_, err := db.Model(&teacher).Insert()
+	fmt.Println("teacherrrr", teacher)
+	fmt.Println("teacherrrr", teacher)
+
+	_, err := db.Model(teacher).Insert()
 	if err != nil {
 		return fmt.Errorf("error during inserting teacher data in teacher table ,reason:%s", err)
 	}

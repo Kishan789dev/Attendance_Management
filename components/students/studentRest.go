@@ -13,8 +13,11 @@ import (
 
 	"github.com/go-pg/pg"
 	"github.com/gorilla/mux"
-	services "github.com/kk/attendance_management/Services"
-	auth "github.com/kk/attendance_management/authentication"
+	token "github.com/kk/attendance_management/authentication/tokenvalidation"
+
+	"github.com/kk/attendance_management/authentication/getrole"
+	"github.com/kk/attendance_management/components/users"
+
 	bean "github.com/kk/attendance_management/bean"
 	"github.com/kk/attendance_management/dataBase"
 )
@@ -34,14 +37,14 @@ func GetStudents(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	_, err := auth.ValidateTokenAndGetEmail(w, r)
+	_, err := token.ValidateTokenAndGetEmail(w, r)
 	if err != nil {
 		json.NewEncoder(w).Encode("user is unauthorised")
 		return
 
 	}
 
-	students, err := services.GetStudentsSvc()
+	students, err := GetStudentsSvc()
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -55,7 +58,7 @@ func GetStudents(w http.ResponseWriter, r *http.Request) {
 func GetStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	_, err := auth.ValidateTokenAndGetEmail(w, r)
+	_, err := token.ValidateTokenAndGetEmail(w, r)
 	if err != nil {
 		json.NewEncoder(w).Encode("user is unauthorised")
 		return
@@ -65,7 +68,7 @@ func GetStudent(w http.ResponseWriter, r *http.Request) {
 	student_id := params["id"]
 	id, _ := strconv.Atoi(student_id)
 
-	students, err := services.GetStudentSvc(id)
+	students, err := GetStudentSvc(id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -77,7 +80,7 @@ func GetStudent(w http.ResponseWriter, r *http.Request) {
 
 func AddStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	role, err := auth.GetRole(w, r)
+	role, err := getrole.GetRole(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -107,7 +110,7 @@ func AddStudent(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println(student)
 
-	err = services.AddStudentService(&student)
+	err = AddStudentService(&student)
 	if err != nil {
 		// fmt.Println("err2 ")
 
@@ -115,7 +118,7 @@ func AddStudent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = auth.AddUser(userdetails.Email, 1, userdetails.Password)
+	err = users.AddUser(userdetails.Email, 1, userdetails.Password)
 	if err != nil {
 		// fmt.Println("err3 ")
 
@@ -133,7 +136,7 @@ func UpdateStudent(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	role, err := auth.GetRole(w, r)
+	role, err := getrole.GetRole(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -172,7 +175,7 @@ func UpdateStudent(w http.ResponseWriter, r *http.Request) {
 func DeleteStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	role, err := auth.GetRole(w, r)
+	role, err := getrole.GetRole(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -240,14 +243,14 @@ func StudentEntryPunchin(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	email, err := auth.ValidateTokenAndGetEmail(w, r)
+	email, err := token.ValidateTokenAndGetEmail(w, r)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	err, CustomErrTyp, sid := services.StudentEntryPunchinSvc(email)
+	err, CustomErrTyp, sid := StudentEntryPunchinSvc(email)
 	log.Println("sidddd", sid)
 	log.Println("errtypeeee", CustomErrTyp)
 
@@ -259,7 +262,7 @@ func StudentEntryPunchin(w http.ResponseWriter, r *http.Request) {
 	var aid int
 	if CustomErrTyp == 1 {
 
-		err, aid = services.StudentAttendanceWithPunchData(sid)
+		err, aid = StudentAttendanceWithPunchData(sid)
 		fmt.Println("AIDDDDDD", aid)
 
 		if err != nil {
@@ -277,11 +280,11 @@ func StudentEntryPunchin(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	// err, aid = services.StudentAttendanceWithPunchData(sid)
+	// err, aid = StudentAttendanceWithPunchData(sid)
 	// log.Println("aiiiiioooooooooooood", aid)
 	aid = sid
 	// if CustomErrTyp == 2 {
-	err, str := services.StudentPunchEntryInTable(aid)
+	err, str := StudentPunchEntryInTable(aid)
 
 	if err != nil {
 		// json.NewEncoder(w).Encode(err)
@@ -301,14 +304,14 @@ func StudentEntryPunchOut(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	email, err := auth.ValidateTokenAndGetEmail(w, r)
+	email, err := token.ValidateTokenAndGetEmail(w, r)
 	if err != nil {
 		log.Println("logout", err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	err, CustomErrTyp, _, aid := services.StudentEntryPunchOutSvc(email)
+	err, CustomErrTyp, _, aid := StudentEntryPunchOutSvc(email)
 	if CustomErrTyp == 0 {
 		json.NewEncoder(w).Encode("you are not a student")
 		return
@@ -332,7 +335,7 @@ func StudentEntryPunchOut(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("errrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr", aid)
 
-	err, str := services.StudentPunchOutEntryInTable(aid)
+	err, str := StudentPunchOutEntryInTable(aid)
 	if err != nil {
 		// log.Println("logout777777", err)
 
@@ -346,7 +349,7 @@ func StudentEntryPunchOut(w http.ResponseWriter, r *http.Request) {
 func GetStudentattendance(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	email, err := auth.ValidateTokenAndGetEmail(w, r)
+	email, err := token.ValidateTokenAndGetEmail(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Println("error here")
@@ -354,7 +357,7 @@ func GetStudentattendance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err, sid := services.GetStudentsAttendanceEmailSvc(email)
+	err, sid := GetStudentsAttendanceEmailSvc(email)
 
 	if err != nil {
 		json.NewEncoder(w).Encode("you are not a student")
@@ -364,7 +367,7 @@ func GetStudentattendance(w http.ResponseWriter, r *http.Request) {
 	studentattendance := &bean.StudentAttendance{Sid: sid}
 	json.NewDecoder(r.Body).Decode(&studentattendance)
 
-	studentattendancedetail, err := services.FetchAttendanceFromDetailsSvc(studentattendance)
+	studentattendancedetail, err := FetchAttendanceFromDetailsSvc(studentattendance)
 
 	if err != nil {
 		// log.Println("yyyy1", err.Error())
