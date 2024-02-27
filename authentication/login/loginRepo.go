@@ -1,16 +1,27 @@
 package login
 
 import (
-	// "fmt"
-
 	bean "github.com/kk/attendance_management/bean"
 	"github.com/kk/attendance_management/dataBase"
 )
 
-func LoginRepo(useremail string) (error, string) {
+type LoginRepo interface {
+	LoginRepo(useremail string) (error, string)
+}
+type LoginRepoImpl struct {
+	database dataBase.DataBase
+}
 
-	db := dataBase.Connect()
-	defer db.Close()
+func NewLoginRepo(database dataBase.DataBase) *LoginRepoImpl {
+	return &LoginRepoImpl{
+		database: database,
+	}
+}
+
+func (impl *LoginRepoImpl) LoginRepo(useremail string) (error, string) {
+
+	// fmt.Println(dataBase)
+	db := impl.database.Connect()
 
 	var getpassword bean.User
 	var mypass string

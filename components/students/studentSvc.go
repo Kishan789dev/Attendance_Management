@@ -1,49 +1,51 @@
 package students
 
 import (
-	"fmt"
-	"log"
-
 	"github.com/kk/attendance_management/bean"
-	// repository "github.com/kk/attendance_management/repository"
+	"github.com/kk/attendance_management/components/users"
 )
 
-func GetStudentsSvc() ([]bean.Student, error) {
-
-	students, err := GetStudentsRepo()
-	return students, err
+type StudentService interface {
+	AddStudentService(student *bean.Student, userdetails *bean.Userdetails) error
+	StudentAttendanceWithPunchData(sid int) (error, int)
+	StudentPunchEntryInTable(aid int) (error, string)
+	StudentEntryPunchinSvc(email string) (error, int, int)
+	StudentEntryPunchOutSvc(email string) (error, int, int, int)
+	StudentPunchOutEntryInTable(aid int) (error, string)
+	GetStudentsAttendanceEmailSvc(email string) (error, int)
+	FetchAttendanceFromDetailsSvc(studentattendance *bean.StudentAttendance) (*[]bean.StudentAttendancetemp, error)
 }
 
-func GetStudentSvc(id int) (bean.Student, error) {
+type StudentServiceImpl struct {
+	studentRepo StudentRepository
+	userrest    users.UserRest
+}
 
-	students, err := GetStudentRepo(id)
-	if err != nil {
-		return students, err
+func NewStudentservice(studentRepo StudentRepository, userrest users.UserRest) *StudentServiceImpl {
+	return &StudentServiceImpl{
+		studentRepo: studentRepo,
+		userrest:    userrest,
 	}
-
-	return students, nil
 }
 
-func AddStudentService(student *bean.Student) error {
+func (impl *StudentServiceImpl) AddStudentService(student *bean.Student, userdetails *bean.Userdetails) error {
 
-	err := AddStudentRepo(student)
-	if err != nil {
-
+	err := impl.studentRepo.AddStudentRepo(student)
+	if err == nil {
+		impl.userrest.AddUser(userdetails.Email, 1, userdetails.Password)
 		return err
 	}
 
 	return nil
 }
 
-// punchin
-
-func StudentAttendanceWithPunchData(sid int) (error, int) {
-	aid, err := StudentEntryPunchinEntryRepo(sid)
+func (impl *StudentServiceImpl) StudentAttendanceWithPunchData(sid int) (error, int) {
+	aid, err := impl.studentRepo.StudentEntryPunchinEntryRepo(sid)
 	if err != nil {
 		return err, 0
 	}
 
-	err = StudentEntryPunchinEntryTableRepo(aid)
+	err = impl.studentRepo.StudentEntryPunchinEntryTableRepo(aid)
 	if err != nil {
 		return err, 1
 	}
@@ -51,17 +53,16 @@ func StudentAttendanceWithPunchData(sid int) (error, int) {
 	return nil, aid
 }
 
-func StudentPunchEntryInTable(aid int) (error, string) {
-	pi_count, po_count, err := StudentEntryOnlyPunchinSvc(aid)
+func (impl *StudentServiceImpl) StudentPunchEntryInTable(aid int) (error, string) {
+	pi_count, po_count, err := impl.studentRepo.StudentEntryOnlyPunchinRepo(aid)
 	if err != nil {
 		return err, ""
 	}
 
 	if pi_count <= po_count {
 
-		err = StudentPunchingSvc(aid)
+		err = impl.studentRepo.StudentPunchingRepo(aid)
 		if err != nil {
-			log.Println("lololololololololooloolol", err)
 
 			return err, ""
 		}
@@ -74,11 +75,9 @@ func StudentPunchEntryInTable(aid int) (error, string) {
 
 }
 
-func StudentEntryPunchinSvc(email string) (error, int, int) {
-	err, typ, sid := StudentEntryPunchinRepo(email)
-	fmt.Println("jdsjsfjsjdsjsdjdsjdsjdsjdssdjjs", sid)
+func (impl *StudentServiceImpl) StudentEntryPunchinSvc(email string) (error, int, int) {
+	err, typ, sid := impl.studentRepo.StudentEntryPunchinRepo(email)
 	if err != nil {
-		log.Println("sidddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
 		return err, typ, sid
 	}
 
@@ -86,11 +85,8 @@ func StudentEntryPunchinSvc(email string) (error, int, int) {
 
 }
 
-// *********punchout
-var aid int
-
-func StudentEntryPunchOutSvc(email string) (error, int, int, int) {
-	err, typ, sid, aid := StudentEntryPunchOutRepo(email)
+func (impl *StudentServiceImpl) StudentEntryPunchOutSvc(email string) (error, int, int, int) {
+	err, typ, sid, aid := impl.studentRepo.StudentEntryPunchOutRepo(email)
 	if err != nil {
 
 		return err, typ, sid, aid
@@ -100,29 +96,15 @@ func StudentEntryPunchOutSvc(email string) (error, int, int, int) {
 
 }
 
-// func StudentAttendanceWithPunchOutData() (error, int) {
-// 	// aid, err := StudentEntryPunchinEntryRepo()
-// 	// if err != nil {
-// 	// 	return err, 0
-// 	// }
-
-// 	err := StudentEntryPunchinEntryTableRepo(aid)
-// 	if err != nil {
-// 		return err, 0
-// 	}
-
-// 	return nil, aid
-// }
-
-func StudentPunchOutEntryInTable(aid int) (error, string) {
-	pi_count, po_count, err := StudentEntryOnlyPunchOutSvc(aid)
+func (impl *StudentServiceImpl) StudentPunchOutEntryInTable(aid int) (error, string) {
+	pi_count, po_count, err := impl.studentRepo.StudentEntryOnlyPunchOutRepo(aid)
 	if err != nil {
 		return err, ""
 	}
 
 	if pi_count > po_count {
 
-		err = StudentPunchingOutRepo(aid)
+		err = impl.studentRepo.StudentPunchingOutRepo(aid)
 		if err != nil {
 
 			return err, ""
@@ -137,10 +119,8 @@ func StudentPunchOutEntryInTable(aid int) (error, string) {
 
 }
 
-// Getstudents attendance
-
-func GetStudentsAttendanceEmailSvc(email string) (error, int) {
-	err, sid := GetSid(email)
+func (impl *StudentServiceImpl) GetStudentsAttendanceEmailSvc(email string) (error, int) {
+	err, sid := impl.studentRepo.GetSid(email)
 	if err != nil {
 		return err, 0
 
@@ -148,6 +128,6 @@ func GetStudentsAttendanceEmailSvc(email string) (error, int) {
 	return nil, sid
 
 }
-func FetchAttendanceFromDetailsSvc(studentattendance *bean.StudentAttendance) (*[]bean.StudentAttendancetemp, error) {
-	return FetchAttendanceFromDetailsRepo(studentattendance)
+func (impl *StudentServiceImpl) FetchAttendanceFromDetailsSvc(studentattendance *bean.StudentAttendance) (*[]bean.StudentAttendancetemp, error) {
+	return impl.studentRepo.FetchAttendanceFromDetailsRepo(studentattendance)
 }

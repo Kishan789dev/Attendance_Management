@@ -7,45 +7,43 @@ import (
 	"github.com/kk/attendance_management/components/teachers"
 )
 
-func InitialiseRouter(r2 *mux.Router) {
+type RouteImp struct {
+	login    login.LoginRest
+	students students.StudentRest
+	teachers teachers.TeacherRest
+}
 
-	// r2.HandleFunc("/refresh", r/h.Refresh).Methods("GET")
+func NewRoute(r2 *mux.Router, login login.LoginRest, students students.StudentRest, teachers teachers.TeacherRest) *RouteImp {
+	return &RouteImp{
+		login:    login,
+		students: students,
+		teachers: teachers,
+	}
+}
 
-	r2.HandleFunc("/login", login.Login).Methods("POST")
-	// r2.HandleFunc("/home", rh.Home).Methods("GET")
-	// r2.HandleFunc("/register", login.Register).Methods("POST")
+func (impl *RouteImp) InitialiseRouter(r2 *mux.Router) {
 
-	r2.HandleFunc("/student/{id}", students.GetStudent).Methods("GET")
-	r2.HandleFunc("/students", students.GetStudents).Methods("GET")
-	r2.HandleFunc("/student", students.AddStudent).Methods("POST")
-	r2.HandleFunc("/student/{id}", students.UpdateStudent).Methods("PUT")
-	r2.HandleFunc("/student/{id}", students.DeleteStudent).Methods("DELETE")
+	r2.HandleFunc("/login", impl.login.Login).Methods("POST")
+
+	r2.HandleFunc("/student", impl.students.AddStudent).Methods("POST")
 
 	// // ********************Student attendance*****************
 
-	r2.HandleFunc("/studentattendance/punchin", students.StudentEntryPunchin).Methods("POST")
-	r2.HandleFunc("/studentattendance/punchout", students.StudentEntryPunchOut).Methods("POST")
+	r2.HandleFunc("/studentattendance/punchin", impl.students.StudentEntryPunchin).Methods("POST")
+	r2.HandleFunc("/studentattendance/punchout", impl.students.StudentEntryPunchOut).Methods("POST")
 
-	r2.HandleFunc("/studentattendance/student", students.GetStudentattendance).Methods("POST")
-	r2.HandleFunc("/classattendance", teachers.GetClassattendance).Methods("POST")
-
-	// r2.HandleFunc("/studentattendance/{class}/{date}/{month}/{year}", rh.GetClassattendance).Methods("GET")
-
-	// log.Fatal(http.ListenAndServe(":5678", r2))q
+	r2.HandleFunc("/studentattendance/student", impl.students.GetStudentattendance).Methods("POST")
+	r2.HandleFunc("/classattendance", impl.teachers.GetClassattendance).Methods("POST")
 
 	// 	// ************Teacher************************************
 
-	r2.HandleFunc("/teacher/{id}", teachers.GetTeacher).Methods("GET")
-	r2.HandleFunc("/teachers", teachers.GetTeachers).Methods("GET")
-	r2.HandleFunc("/teacher", teachers.AddTeacher).Methods("POST")
-	r2.HandleFunc("/teacher/{id}", teachers.UpdateTeacher).Methods("PUT")
-	r2.HandleFunc("/teacher/{id}", teachers.DeleteTeacher).Methods("DELETE")
+	r2.HandleFunc("/teacher", impl.teachers.AddTeacher).Methods("POST")
 
 	// ********************Teacher attendance*****************
 
-	r2.HandleFunc("/teacherattendance/punchin", teachers.TeacherEntryPunchin).Methods("POST")
-	r2.HandleFunc("/teacherattendance/punchout", teachers.TeacherEntryPunchOut).Methods("POST")
+	r2.HandleFunc("/teacherattendance/punchin", impl.teachers.TeacherEntryPunchin).Methods("POST")
+	r2.HandleFunc("/teacherattendance/punchout", impl.teachers.TeacherEntryPunchOut).Methods("POST")
 
-	r2.HandleFunc("/teacherattendance", teachers.GetTeacherattendance).Methods("POST")
+	r2.HandleFunc("/teacherattendance", impl.teachers.GetTeacherattendance).Methods("POST")
 
 }

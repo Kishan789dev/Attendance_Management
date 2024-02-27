@@ -4,20 +4,36 @@ import (
 	"encoding/json"
 	"net/http"
 
-	token "github.com/kk/attendance_management/authentication/tokenvalidation"
-	// login "github.com/kk/attendance_management/authentication/login"
+	tokenvalid "github.com/kk/attendance_management/authentication/tokenvalidation"
 )
 
-func GetRole(w http.ResponseWriter, r *http.Request) (int, error) {
+type GetroleRest interface {
+	GetRole(w http.ResponseWriter, r *http.Request) (int, error)
+	GetRoletemp(w http.ResponseWriter, r *http.Request, tokenstr string) (int, error)
+}
 
-	email, err := token.ValidateTokenAndGetEmail(w, r)
+type GetroleRestImpl struct {
+	getrolesvc GetroleSvc
+	auth       tokenvalid.AuthenticationRest
+}
+
+func NewGetroleRest(getrolesvc GetroleSvc, auth tokenvalid.AuthenticationRest) *GetroleRestImpl {
+	return &GetroleRestImpl{
+		getrolesvc: getrolesvc,
+		auth:       auth,
+	}
+}
+
+func (impl *GetroleRestImpl) GetRole(w http.ResponseWriter, r *http.Request) (int, error) {
+
+	email, err := impl.auth.ValidateTokenAndGetEmail(w, r)
 	if err != nil {
 		json.NewEncoder(w).Encode("user is unauthorised")
 		return 0, err
 
 	}
 
-	err, role := GetRolesvc(email)
+	err, role := impl.getrolesvc.GetRolesvc(email)
 
 	if err != nil {
 
@@ -30,15 +46,15 @@ func GetRole(w http.ResponseWriter, r *http.Request) (int, error) {
 
 }
 
-func GetRoletemp(w http.ResponseWriter, r *http.Request, tokenstr string) (int, error) {
+func (impl *GetroleRestImpl) GetRoletemp(w http.ResponseWriter, r *http.Request, tokenstr string) (int, error) {
 
-	email, err := token.ValidateTokenAndGetEmailtemp(w, r, tokenstr)
+	email, err := impl.auth.ValidateTokenAndGetEmailtemp(w, r, tokenstr)
 	if err != nil {
 		json.NewEncoder(w).Encode("user is unauthorised")
 		return 0, err
 
 	}
-	err, role := GetRolesvc(email)
+	err, role := impl.getrolesvc.GetRolesvc(email)
 
 	if err != nil {
 

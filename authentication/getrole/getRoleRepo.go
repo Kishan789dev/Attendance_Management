@@ -7,10 +7,24 @@ import (
 	"github.com/kk/attendance_management/dataBase"
 )
 
-func GetRoleRepo(email string) (error, int) {
+type GetroleRepo interface {
+	GetRoleRepo(email string) (error, int)
+}
+type GetroleRepoImpl struct {
+	database dataBase.DataBase
+}
 
-	db := dataBase.Connect()
-	defer db.Close()
+func NewGetRole(database dataBase.DataBase) *GetroleRepoImpl {
+	return &GetroleRepoImpl{
+
+		database: database,
+	}
+}
+
+func (impl *GetroleRepoImpl) GetRoleRepo(email string) (error, int) {
+
+	db := impl.database.Connect()
+	// defer db.Close()
 
 	var role int
 

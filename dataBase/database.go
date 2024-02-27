@@ -1,52 +1,100 @@
 package dataBase
 
 import (
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/go-pg/pg"
-	// rh "github.com/kk/attendance_management/restHandler"
 )
 
-// database connection
+type DataBase interface {
+	Connect() *pg.DB
+	Close() error
+}
 
-func Connect() *pg.DB {
+type DataBaseImpl struct {
+	db *pg.DB
+}
+
+func NewDataBase() *DataBaseImpl {
+	//
+
+	// opts := &pg.Options{
+	// 	User:     os.Getenv("DB_USER"),
+	// 	Password: os.Getenv("DB_PASSWORD"),
+	// 	Addr:     os.Getenv("DB_ADD"),
+	// 	Database: os.Getenv("DB_DATABASE"),
+	// }
+	// fmt.Println("test", opts)
+	// fmt.Println("test", opts.User)
+	db := ConnectTest()
+	return &DataBaseImpl{
+		db: db,
+	}
+}
+
+func ConnectTest() *pg.DB {
 	opts := &pg.Options{
 		User:     os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASSWORD"),
 		Addr:     os.Getenv("DB_ADD"),
 		Database: os.Getenv("DB_DATABASE"),
 	}
-
-	var db *pg.DB = pg.Connect(opts)
+	fmt.Println("test2", opts)
+	db := pg.Connect(opts)
 
 	if db == nil {
-		log.Printf("database connection failed.\n")
+		// log.Printf("database connection failed.\n")
 		os.Exit(100)
 	}
-	log.Printf("connect successful.\n")
-
-	// if err := createSchema(db); err != nil {
-	// 	log.Fatal(err)
-	// }
+	// log.Printf("connect successful.\n")
+	// cnt = db
 	return db
-
 }
 
-// func createSchema(db *pg.DB) error {
-// 	models := []interface{}{
-// 		(*Student)(nil),
-// 	}
+func (impl *DataBaseImpl) Connect() *pg.DB {
+	// if cnt != nil {
+	// 	return cnt
+	// }
+	// opts := &pg.Options{
+	// 	User:     os.Getenv("DB_USER"),
+	// 	Password: os.Getenv("DB_PASSWORD"),
+	// 	Addr:     os.Getenv("DB_ADD"),
+	// 	Database: os.Getenv("DB_DATABASE"),
+	// }
+	// fmt.Println("test2", opts)
+	// db := pg.Connect(opts)
 
-// 	for _, model := range models {
-// 		err := db.Model(model).CreateTable(&orm.CreateTableOptions{
-// 			IfNotExists: true,
-// 		})
-// 		if err != nil {
-// 			return err
-// 		}
+	// if db == nil {
+	// 	// log.Printf("database connection failed.\n")
+	// 	os.Exit(100)
+	// }
+	// // log.Printf("connect successful.\n")
+	// // cnt = db
+	// return db
+	// fmt.Print(impl.db)
+	return impl.db
+}
+func (impl *DataBaseImpl) Close() error {
+	// if cnt != nil {
+	// 	return cnt
+	// }
+	// opts := &pg.Options{
+	// 	User:     os.Getenv("DB_USER"),
+	// 	Password: os.Getenv("DB_PASSWORD"),
+	// 	Addr:     os.Getenv("DB_ADD"),
+	// 	Database: os.Getenv("DB_DATABASE"),
+	// }
 
-// 	}
-// 	return nil
+	// db := pg.Connect(opts)
 
-// }
+	// if db == nil {
+	// 	log.Printf("database connection failed.\n")
+	// 	os.Exit(100)
+	// }
+	// log.Printf("connect successful.\n")
+	// cnt = db
+	// return db
+
+	return impl.db.Close()
+}

@@ -1,35 +1,51 @@
 package teachers
 
 import (
-	"fmt"
-	"log"
-
-	"github.com/kk/attendance_management/components/users"
-
 	"github.com/kk/attendance_management/bean"
-	// repository "github.com/kk/attendance_management/repository"
+	"github.com/kk/attendance_management/components/users"
 )
 
-func AddTeacherSvc(teacher *bean.Teacher, userdetails *bean.Userdetails) error {
+type TeacherSvc interface {
+	AddTeacherSvc(teacher *bean.Teacher, userdetails *bean.Userdetails) error
+	TeacherAttendanceWithPunchData(tid int) (error, int)
+	TeacherPunchEntryInTable(aid int) (error, string)
+	TeacherEntryPunchinSvc(email string) (error, int, int)
+	TeacherEntryPunchOutSvc(email string) (error, int, int, int)
+	TeacherPunchOutEntryInTable(aid int) (error, string)
+	GetTeacherattendanceSvcTidGetting(email string, tid *int) error
+	GetTeacherAttendanceDetailsSvc(tid int, month int, year int) (error, []bean.TeacherAttendancetemp)
+	GetClassattendanceSvc(classtemp *bean.Classtemp) (error, *[]bean.ClasstempRes)
+}
 
-	err := AddTeacherRepo(teacher)
+type TeacherSvcImpl struct {
+	teacherrepo TeacherRepo
+	userrest    users.UserRest
+}
+
+func NewTeacherSvc(teacherrepo TeacherRepo, userrest users.UserRest) *TeacherSvcImpl {
+	return &TeacherSvcImpl{
+		teacherrepo: teacherrepo,
+		userrest:    userrest,
+	}
+}
+
+func (impl *TeacherSvcImpl) AddTeacherSvc(teacher *bean.Teacher, userdetails *bean.Userdetails) error {
+	err := impl.teacherrepo.AddTeacherRepo(teacher)
 	if err == nil {
-		users.AddUser(userdetails.Email, 2, userdetails.Password)
+		impl.userrest.AddUser(userdetails.Email, 2, userdetails.Password)
 		return nil
 	}
 	return err
 
 }
 
-// punchin
-
-func TeacherAttendanceWithPunchData(tid int) (error, int) {
-	aid, err := TeacherEntryPunchinEntryRepo(tid)
+func (impl *TeacherSvcImpl) TeacherAttendanceWithPunchData(tid int) (error, int) {
+	aid, err := impl.teacherrepo.TeacherEntryPunchinEntryRepo(tid)
 	if err != nil {
 		return err, 0
 	}
 
-	err = TeacherEntryPunchinEntryTableRepo(aid)
+	err = impl.teacherrepo.TeacherEntryPunchinEntryTableRepo(aid)
 	if err != nil {
 		return err, 1
 	}
@@ -37,15 +53,15 @@ func TeacherAttendanceWithPunchData(tid int) (error, int) {
 	return nil, aid
 }
 
-func TeacherPunchEntryInTable(aid int) (error, string) {
-	pi_count, po_count, err := TeacherEntryOnlyPunchinSvc(aid)
+func (impl *TeacherSvcImpl) TeacherPunchEntryInTable(aid int) (error, string) {
+	pi_count, po_count, err := impl.teacherrepo.TeacherEntryOnlyPunchinRepo(aid)
 	if err != nil {
 		return err, ""
 	}
 
 	if pi_count <= po_count {
 
-		err = TeacherPunchingSvc(aid)
+		err = impl.teacherrepo.TeacherPunchingRepo(aid)
 		if err != nil {
 
 			return err, ""
@@ -59,11 +75,9 @@ func TeacherPunchEntryInTable(aid int) (error, string) {
 
 }
 
-func TeacherEntryPunchinSvc(email string) (error, int, int) {
-	err, typ, tid := TeacherEntryPunchinRepo(email)
-	fmt.Println("jdsjsfjsjdsjsdjdsjdsjdsjdssdjjs", tid)
+func (impl *TeacherSvcImpl) TeacherEntryPunchinSvc(email string) (error, int, int) {
+	err, typ, tid := impl.teacherrepo.TeacherEntryPunchinRepo(email)
 	if err != nil {
-		log.Println("tidddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
 		return err, typ, tid
 	}
 
@@ -71,11 +85,8 @@ func TeacherEntryPunchinSvc(email string) (error, int, int) {
 
 }
 
-// *********punchout
-// var aid int
-
-func TeacherEntryPunchOutSvc(email string) (error, int, int, int) {
-	err, typ, tid, aid := TeacherEntryPunchOutRepo(email)
+func (impl *TeacherSvcImpl) TeacherEntryPunchOutSvc(email string) (error, int, int, int) {
+	err, typ, tid, aid := impl.teacherrepo.TeacherEntryPunchOutRepo(email)
 	if err != nil {
 
 		return err, typ, tid, aid
@@ -85,29 +96,15 @@ func TeacherEntryPunchOutSvc(email string) (error, int, int, int) {
 
 }
 
-// func TeacherAttendanceWithPunchOutData() (error, int) {
-// 	// aid, err := TeacherEntryPunchinEntryRepo()
-// 	// if err != nil {
-// 	// 	return err, 0
-// 	// }
-
-// 	err := TeacherEntryPunchinEntryTableRepo(aid)
-// 	if err != nil {
-// 		return err, 0
-// 	}
-
-// 	return nil, aid
-// }
-
-func TeacherPunchOutEntryInTable(aid int) (error, string) {
-	pi_count, po_count, err := TeacherEntryOnlyPunchOutSvc(aid)
+func (impl *TeacherSvcImpl) TeacherPunchOutEntryInTable(aid int) (error, string) {
+	pi_count, po_count, err := impl.teacherrepo.TeacherEntryOnlyPunchOutRepo(aid)
 	if err != nil {
 		return err, ""
 	}
 
 	if pi_count > po_count {
 
-		err = TeacherPunchingOutRepo(aid)
+		err = impl.teacherrepo.TeacherPunchingOutRepo(aid)
 		if err != nil {
 
 			return err, ""
@@ -122,23 +119,19 @@ func TeacherPunchOutEntryInTable(aid int) (error, string) {
 
 }
 
-// GetTeacherAttendance
+func (impl *TeacherSvcImpl) GetTeacherattendanceSvcTidGetting(email string, tid *int) error {
 
-func GetTeacherattendanceSvcTidGetting(email string, tid *int) error {
-
-	return GetTeacherattendanceRepoTidGetting(email, tid)
+	return impl.teacherrepo.GetTeacherattendanceRepoTidGetting(email, tid)
 
 }
 
-func GetTeacherAttendanceDetailsSvc(tid int, month int, year int) (error, []bean.TeacherAttendancetemp) {
+func (impl *TeacherSvcImpl) GetTeacherAttendanceDetailsSvc(tid int, month int, year int) (error, []bean.TeacherAttendancetemp) {
 
-	return GetTeacherAttendanceDetailsRepo(tid, month, year)
+	return impl.teacherrepo.GetTeacherAttendanceDetailsRepo(tid, month, year)
 
 }
 
-// Get class attendance
+func (impl *TeacherSvcImpl) GetClassattendanceSvc(classtemp *bean.Classtemp) (error, *[]bean.ClasstempRes) {
 
-func GetClassattendanceSvc(classtemp *bean.Classtemp) (error, *[]bean.ClasstempRes) {
-
-	return GetClassattendanceRepo(classtemp)
+	return impl.teacherrepo.GetClassattendanceRepo(classtemp)
 }

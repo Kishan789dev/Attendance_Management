@@ -2,6 +2,19 @@ package users
 
 import bn "github.com/kk/attendance_management/bean"
 
-func AddUserSvc(user *bn.User) error {
-	return AddUserRepo(user)
+type UserSvc interface {
+	AddUserSvc(user *bn.User) error
+}
+type UserSvcImpl struct {
+	userrepo UserRepo
+}
+
+func NewUserSvc(userrepo UserRepo) *UserSvcImpl {
+	return &UserSvcImpl{
+		userrepo: userrepo,
+	}
+}
+
+func (impl *UserSvcImpl) AddUserSvc(user *bn.User) error {
+	return impl.userrepo.AddUserRepo(user)
 }

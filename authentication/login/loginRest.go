@@ -10,16 +10,30 @@ import (
 	"github.com/go-pg/pg"
 
 	"github.com/kk/attendance_management/authentication/getrole"
-	// "github.com/kk/attendance_management/authentication/getrole"
-	// "github.com/kk/attendance_management/authentication"
 	bean "github.com/kk/attendance_management/bean"
 )
 
+type LoginRest interface {
+	Login(w http.ResponseWriter, r *http.Request)
+}
+
+type LoginRestImpl struct {
+	loginsvc LoginSvc
+	getrole  getrole.GetroleRest
+}
+
+func NewLoginRest(loginsvc LoginSvc, getrole getrole.GetroleRest) *LoginRestImpl {
+	return &LoginRestImpl{
+		loginsvc: loginsvc,
+		getrole:  getrole,
+	}
+}
+
 var jwtKey = []byte("secret_key")
 
-func Login(w http.ResponseWriter, r *http.Request) {
+func (impl *LoginRestImpl) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
+	fmt.Println("kxfkjdfhjkdfghkjdfhkj")
 	var credentialStudent bean.Credentials
 
 	err := json.NewDecoder(r.Body).Decode(&credentialStudent)
@@ -28,16 +42,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	// var getpassword bean.User
 
-	// err = db.Model(&getpassword).Column("password").Where("email=?", credentialStudent.Useremail).Select(&mypass)
-
-	err, mypass := LoginSvc(credentialStudent.Useremail)
+	err, mypass := impl.loginsvc.LoginSvc(credentialStudent.Useremail)
 	if err != nil {
-		// log.Println("k0")
 		if err == pg.ErrNoRows {
-			// fmt.Println("line 38 status u")
-			// w.WriteHeader(http.StatusInternalServerError)
 			errMsg := make(map[string]string, 0)
 			errMsg["error"] = "wrong details entered"
 
@@ -54,17 +62,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Expected password")
 	expectedPassword := credentialStudent.Password
 	actualPassword := mypass
-	// log.Println("k1")
 
 	if expectedPassword != actualPassword {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	// log.Println("k2")
 
-	// expectedPassword, ok := users[credentials.Username]
-
-	expirationTime := time.Now().Add(time.Hour * 400000)
+	expirationTime := time.Now().Add(time.Hour * 999999)
 
 	claims := &bean.Claims{
 		Useremail: credentialStudent.Useremail,
@@ -92,8 +96,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			Path:     "/",
 		})
 
-	// log.Println("kisahn")
-	role, err := getrole.GetRoletemp(w, r, tokenString)
+	role, err := impl.getrole.GetRoletemp(w, r, tokenString)
 	if err == nil {
 		errorMap := map[string]int{
 			"role": role,
@@ -103,5 +106,4 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 
 	}
-	// defer db.Close()
 }

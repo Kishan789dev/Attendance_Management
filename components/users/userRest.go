@@ -4,12 +4,25 @@ import (
 	bn "github.com/kk/attendance_management/bean"
 )
 
-func AddUser(email string, role int, password string) error {
+type UserRest interface {
+	AddUser(email string, role int, password string) error
+}
+type UserRestImpl struct {
+	usersvc UserSvc
+}
+
+func NewUserRestImpl(usersvc UserSvc) *UserRestImpl {
+	return &UserRestImpl{
+		usersvc: usersvc,
+	}
+}
+
+func (impl *UserRestImpl) AddUser(email string, role int, password string) error {
 	var user bn.User
 	user.Email = email
 	user.Role = role
 	user.Password = password
-	err := AddUserSvc(&user)
+	err := impl.usersvc.AddUserSvc(&user)
 
 	if err != nil {
 

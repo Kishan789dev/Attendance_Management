@@ -6,9 +6,22 @@ import (
 	"github.com/kk/attendance_management/dataBase"
 )
 
-func ValidateTokenAndGetEmailRepo(email string) error {
-	db := dataBase.Connect()
-	defer db.Close()
+type AuthenticationRepo interface {
+	ValidateTokenAndGetEmailRepo(email string) error
+}
+type AuthenticationRepoImpl struct {
+	database dataBase.DataBase
+}
+
+func NewAuthenticationRepo(database dataBase.DataBase) *AuthenticationRepoImpl {
+	return &AuthenticationRepoImpl{
+		database: database,
+	}
+}
+
+func (impl *AuthenticationRepoImpl) ValidateTokenAndGetEmailRepo(email string) error {
+	db := impl.database.Connect()
+
 	err := db.Model(&bean.User{}).Where("email=?", email).Select()
 	if err == pg.ErrNoRows {
 

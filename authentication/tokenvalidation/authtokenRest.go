@@ -8,9 +8,23 @@ import (
 	"github.com/kk/attendance_management/bean"
 )
 
+type AuthenticationRest interface {
+	ValidateTokenAndGetEmail(w http.ResponseWriter, r *http.Request) (string, error)
+	ValidateTokenAndGetEmailtemp(w http.ResponseWriter, r *http.Request, tokenstr string) (string, error)
+}
+type AuthenticationRestImpl struct {
+	authenticationsvc AuthenticationSvc
+}
+
+func NewAuthenticationRest(authenticationsvc AuthenticationSvc) *AuthenticationRestImpl {
+	return &AuthenticationRestImpl{
+		authenticationsvc: authenticationsvc,
+	}
+}
+
 var jwtKey = []byte("secret_key")
 
-func ValidateTokenAndGetEmail(w http.ResponseWriter, r *http.Request) (string, error) {
+func (impl *AuthenticationRestImpl) ValidateTokenAndGetEmail(w http.ResponseWriter, r *http.Request) (string, error) {
 	cookie, err := r.Cookie("token")
 	fmt.Println("cookie is ", cookie)
 	if err != nil {
@@ -43,18 +57,8 @@ func ValidateTokenAndGetEmail(w http.ResponseWriter, r *http.Request) (string, e
 		w.WriteHeader(http.StatusUnauthorized)
 		return "", err
 	}
-	// check email expiration
 
-	// var newuser bean.User
-	// db := dataBase.Connect()
-	// defer db.Close()
-	// err = db.Model(&newuser).Where("email=?", claims.Useremail).Select()
-	// if err == pg.ErrNoRows {
-	// 	w.WriteHeader(http.StatusUnauthorized)
-	// 	return "", err
-	// }
-	// if bean.Claims.ExpiresAt
-	err = ValidateTokenAndGetEmailSvc(claims.Useremail)
+	err = impl.authenticationsvc.ValidateTokenAndGetEmailSvc(claims.Useremail)
 	if err != nil {
 		return "", err
 	}
@@ -63,16 +67,7 @@ func ValidateTokenAndGetEmail(w http.ResponseWriter, r *http.Request) (string, e
 
 }
 
-func ValidateTokenAndGetEmailtemp(w http.ResponseWriter, r *http.Request, tokenstr string) (string, error) {
-	// cookie, err := r.Cookie("token")
-	// fmt.Println("cookie is ", cookie)
-	// if err != nil {
-	// 	if err == http.ErrNoCookie {
-	// 		return "", err
-	// 	}
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	return "", err
-	// }
+func (impl *AuthenticationRestImpl) ValidateTokenAndGetEmailtemp(w http.ResponseWriter, r *http.Request, tokenstr string) (string, error) {
 
 	tokenStr := tokenstr
 
@@ -96,14 +91,12 @@ func ValidateTokenAndGetEmailtemp(w http.ResponseWriter, r *http.Request, tokens
 		w.WriteHeader(http.StatusUnauthorized)
 		return "", err
 	}
-	// check email expiration
 
-	err = ValidateTokenAndGetEmailSvc(claims.Useremail)
+	err = impl.authenticationsvc.ValidateTokenAndGetEmailSvc(claims.Useremail)
 	if err != nil {
 		return "", err
 	}
 
 	return claims.Useremail, err
-	// if bean.Claims.ExpiresAt
 
 }
