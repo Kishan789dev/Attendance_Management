@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/joho/godotenv"
 )
@@ -18,7 +17,8 @@ import (
 func main() {
 	// fmt.println("lkdjfsdklfjsdklfj")
 	if err := godotenv.Load(); err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		fmt.Println("error", err)
 
 	}
 	fmt.Print("hello")

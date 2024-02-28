@@ -37,6 +37,6 @@ func (app *App) Start() {
 	})
 	handler := c.Handler(r)
 	app.r.InitialiseRouter(r)
-	defer log.Fatal(http.ListenAndServe(":9800", handler))
+	defer log.Fatal(http.ListenAndServe(":9898", handler))
 	defer app.database.Close()
 }
