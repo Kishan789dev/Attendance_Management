@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/go-pg/pg"
+	"github.com/kk/attendance_management/bean"
 )
 
 type DataBase interface {
@@ -42,6 +43,20 @@ func ConnectTest() *pg.DB {
 	}
 	fmt.Println("test2", opts)
 	db := pg.Connect(opts)
+	fmt.Println("address", opts.Addr)
+	fmt.Println("db", db)
+	fmt.Println("db", db)
+	// var
+	// db.Model(&bean.User{}).Select()
+	var email string = "shashwat@gmail.com"
+
+	var tid int
+	err := db.Model(&bean.Teacher{}).Column("tid").Where("email=?", email).Select(&tid)
+	if err != nil {
+		fmt.Println("error during connection", err)
+
+	}
+	fmt.Println("connection success", tid)
 
 	if db == nil {
 		// log.Printf("database connection failed.\n")
