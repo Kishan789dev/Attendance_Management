@@ -38,7 +38,7 @@ func ConnectTest() *pg.DB {
 	opts := &pg.Options{
 		User:     os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASSWORD"),
-		Addr:     os.Getenv("DB_ADD"),
+		Addr:     os.Getenv("DB_ADDRESS"),
 		Database: os.Getenv("DB_DATABASE"),
 	}
 	fmt.Println("test2", opts)
